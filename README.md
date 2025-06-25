@@ -1,17 +1,17 @@
 # Chess
 
-##Objective
+## Objective
 Create a fully offline game of chess between two human players with live time stats as an .exe file.
 
-#Tools
+# Tools
 Coded entirely in Rust
 
-#Notes
+# Notes
  - Traditional Chess
  - Has options for bullet, blitz, or rapid games
  - Time remaining for each player
  - List each move made during the game, along with the time taken to make the move
-#Future
+# Future
  - Go back to see previous moves 
  - Same game on two machines (LAN)
  - Same game online
