@@ -23,8 +23,10 @@ enum PieceType {
     King,
 }
 
+
+
 enum MoveType {
-    Move,
+    BasicMove,
     KingsideCastle,
     Capture,
     EnPassant,
@@ -34,7 +36,19 @@ enum MoveType {
 
 }
 
+//functions to move pieces
+impl Piece {
+
+    fn legal_moves(&self, board: &Board) -> Vec<Square> {}
+        //TODO: Create a vector of squares a piece can move to
+
+    fn turn(&self, color: Color, legal: Vec<Square>) -> Piece {
+    //TODO: call legal_moves for legal, and if move does not match list then force player to re-move
+    }
+}
 
 mod game {
-
+    fn begin() {
+        //TODO: Create signatures and construct initial board
+    }
 }
