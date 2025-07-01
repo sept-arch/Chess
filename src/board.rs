@@ -1,8 +1,16 @@
+use std::collections::HashMap;
 struct Square {
-    column: u8,
-    row: u8,
+    piece: Piece,
+    file: char,
+    rank: u8,
 }
+impl Square {
+    fn new(piece: Piece, file: char, rank: u8) -> Square {
+        //Used to update squares
+        Square {piece, file, rank,}
+    }
+}
+
 struct Board {
-    squares: Vec<Square>,
-    pieces: Vec<Piece>,
+    board: Vec<Vec<Square>>,
 }
