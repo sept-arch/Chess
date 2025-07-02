@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 /*NOTES
  - many functions in Rust return Result<T,E>
- - Consider using match Ok(T), Err(r), include Result<> and include ? to propogate errors
+ - Consider using match Ok(T), Err(r), include Result<> and include ? to propagate errors
 */
 mod board;
 struct Piece {
