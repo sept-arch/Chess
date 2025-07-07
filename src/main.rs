@@ -1,4 +1,15 @@
+use game::game;
+use board::square;
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn it_works() {
+        let game = Game::new();
+    }
+
+}
 
 fn main() {
-    println!("Hello, world!");
+    //TODO: write main lol
 }

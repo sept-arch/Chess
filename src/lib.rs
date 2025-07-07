@@ -1,30 +1,47 @@
 use std::collections::HashMap;
+pub struct Square {
+    pub piece: Piece,
+    pub file: char,
+    pub rank: u8,
+}
+impl Square {
+    pub fn new(piece: Piece, file: char, rank: u8) -> Square {
+        //Used to update squares
+        Square {piece, file, rank,}
+    }
+}
+
+pub struct Board {
+    pub board: Vec<Vec<Square>>,
+}
+
+use std::collections::HashMap;
 /*NOTES
  - many functions in Rust return Result<T,E>
  - Consider using match Ok(T), Err(r), include Result<> and include ? to propagate errors
 */
 mod board;
-struct Piece {
-    color: Color,
-    captured: bool,
-    piece_type: PieceType,
+pub struct Piece {
+    pub color: Color,
+    pub captured: bool,
+    pub piece_type: PieceType,
 }
 
 impl Piece {
-    fn new(color: Color, piece_type: PieceType) -> Piece {
+    pub fn new(color: Color, piece_type: PieceType) -> Piece {
         Piece {color, piece_type}
     }
 }
 
 //creating board first
 
-enum Color {
+pub enum Color {
     White,
     Black,
     Null,
 }
 
-enum PieceType {
+pub enum PieceType {
     Pawn,
     Rook,
     Knight,
@@ -34,9 +51,7 @@ enum PieceType {
     Null,
 }
 
-
-
-enum MoveType {
+pub enum MoveType {
     BasicMove,
     KingsideCastle,
     Capture,
@@ -50,11 +65,11 @@ enum MoveType {
 //functions to move pieces
 impl Piece {
 
-    fn legal_moves(&self, board: &Board) -> Vec<Square> {}
-        //TODO: Create a vector of squares a piece can move to
+    pub fn legal_moves(&self, board: &Board) -> Vec<Square> {}
+    //TODO: Create a vector of squares a piece can move to
 
-    fn turn(&self, color: Color, legal: Vec<Square>) -> Piece {
-    //TODO: call legal_moves for legal, and if move does not match list then force player to re-move
+    pub fn turn(&self, color: Color, legal: Vec<Square>) -> Piece {
+        //TODO: call legal_moves for legal, and if move does not match list then force player to re-move
     }
 }
 
