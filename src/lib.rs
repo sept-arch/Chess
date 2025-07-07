@@ -1,26 +1,16 @@
-use std::collections::HashMap;
+#[derive(Clone)] //easier to duplicate squares
 pub struct Square {
     pub piece: Piece,
     pub file: char,
-    pub rank: u8,
+    pub rank: u8
 }
 impl Square {
     pub fn new(piece: Piece, file: char, rank: u8) -> Square {
-        //Used to update squares
-        Square {piece, file, rank,}
+        Square { piece, file, rank }
     }
 }
 
-pub struct Board {
-    pub board: Vec<Vec<Square>>,
-}
-
-use std::collections::HashMap;
-/*NOTES
- - many functions in Rust return Result<T,E>
- - Consider using match Ok(T), Err(r), include Result<> and include ? to propagate errors
-*/
-mod board;
+#[derive(Clone)]
 pub struct Piece {
     pub color: Color,
     pub captured: bool,
@@ -28,19 +18,19 @@ pub struct Piece {
 }
 
 impl Piece {
-    pub fn new(color: Color, piece_type: PieceType) -> Piece {
-        Piece {color, piece_type}
+    pub fn new(color: Color, piece_type: PieceType) -> Self {
+        Piece { color, captured: false, piece_type, }
     }
 }
 
-//creating board first
-
+#[derive(Clone)]
 pub enum Color {
     White,
     Black,
     Null,
 }
 
+#[derive(Clone)]
 pub enum PieceType {
     Pawn,
     Rook,
@@ -51,92 +41,11 @@ pub enum PieceType {
     Null,
 }
 
-pub enum MoveType {
-    BasicMove,
-    KingsideCastle,
-    Capture,
-    EnPassant,
-    QueenSideCastle,
-    Check,
-    Checkmate
-
-}
-
-//functions to move pieces
-impl Piece {
-
-    pub fn legal_moves(&self, board: &Board) -> Vec<Square> {}
-    //TODO: Create a vector of squares a piece can move to
-
-    pub fn turn(&self, color: Color, legal: Vec<Square>) -> Piece {
-        //TODO: call legal_moves for legal, and if move does not match list then force player to re-move
-    }
-}
-
-pub struct Game {
-    board: Board,
-
-}
-
-impl Game {
-    pub fn new() -> Self {
-        let columns = HashMap::from([
-            (0, 'A'),
-            (1, 'B'),
-            (2, 'C'),
-            (3, 'D'),
-            (4, 'E'),
-            (5, 'F'),
-            (6, 'G'),
-            (7, 'H'),
-        ]);
-        //Creates the board, first thing to be finally tested in main
-        //first, create the pieces
-        //needs to be ordered because of use of vectors
-        let mut i = 0;
-        //creates xy coordinate plane to be treated as board
-        while i < 8 {
-            board.push(Vec::new());
-        }
-        //first row
-        board[0].push(Space::new(Piece::new(Color::White, PieceType::Rook)), 'A', 1);
-        board[0].push(Space::new(Piece::new(Color::White, PieceType::Knight)), 'B', 1);
-        board[0].push(Space::new(Piece::new(Color::White, PieceType::Bishop)), 'C', 1);
-        board[0].push(Space::new(Piece::new(Color::White, PieceType::King)), 'D', 1);
-        board[0].push(Space::new(Piece::new(Color::White, PieceType::Queen)), 'E', 1);
-        board[0].push(Space::new(Piece::new(Color::White, PieceType::Bishop)), 'F', 1);
-        board[0].push(Space::new(Piece::new(Color::White, PieceType::Knight)), 'G', 1);
-        board[0].push(Space::new(Piece::new(Color::White, PieceType::Rook)), 'H', 1);
-        //second row
-        while i < 8 {
-            let temp = Piece::new(White, PieceType::Pawn);
-            board[1].push(Space::new(temp, columns[i], 2));
-            i += 1;
-        }
-        //rows 2-5 are empty, will use "null" piece to indicate empty space
-        for n in 2..6 {
-            for k in 0..7 {
-                board[n][k].push(Space::new(Piece::new(Color::Null, PieceType::Null)), columns[i], n + 1);
-            }
-        }
-        //Copy and pasted for 7-8, except black
-        i = 0;
-        while i < 8 {
-            let temp = Piece::new(Black, PieceType::Pawn);
-            board[6].push(Space::new(temp, columns[i], 1));
-            i += 1;
-        }
-        //first row
-        board[7].push(Space::new(Piece::new(Color::Black, PieceType::Rook)), 'A', 8);
-        board[7].push(Space::new(Piece::new(Color::Black, PieceType::Knight)), 'B', 8);
-        board[7].push(Space::new(Piece::new(Color::Black, PieceType::Bishop)), 'C', 8);
-        board[7].push(Space::new(Piece::new(Color::Black, PieceType::King)), 'D', 8);
-        board[7].push(Space::new(Piece::new(Color::Black, PieceType::Queen)), 'E', 8);
-        board[7].push(Space::new(Piece::new(Color::Black, PieceType::Bishop)), 'F', 8);
-        board[7].push(Space::new(Piece::new(Color::Black, PieceType::Knight)), 'G', 8);
-        board[7].push(Space::new(Piece::new(Color::Black, PieceType::Rook)), 'H', 8);
-        //second row
-
-
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn make_piece() {
+        Piece::new(Color::Black, PieceType::Pawn);
     }
 }

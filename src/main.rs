@@ -1,14 +1,5 @@
-use game::game;
-use board::square;
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn it_works() {
-        let game = Game::new();
-    }
-
-}
+//use Chess::*;
+//Uncomment later; have it uncommented so compiler does not complain
 
 fn main() {
     //TODO: write main lol
