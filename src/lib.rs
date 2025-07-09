@@ -18,6 +18,24 @@ pub struct Piece {
     pub piece_type: PieceType,
 }
 
+#[derive(Clone)]
+pub enum PieceType {
+    Pawn,
+    Rook,
+    Knight,
+    Bishop,
+    Queen,
+    King,
+    //Null,
+}
+
+#[derive(Clone)]
+pub enum Color {
+    White,
+    Black,
+    //Null,
+}
+
 impl Piece {
     pub fn new(color: Color, piece_type: PieceType) -> Self {
         Piece { color, captured: false, piece_type, }
@@ -75,23 +93,9 @@ impl Game {
     //only for testing purposes
 }
 
-#[derive(Clone)]
-pub enum Color {
-    White,
-    Black,
-    //Null,
-}
 
-#[derive(Clone)]
-pub enum PieceType {
-    Pawn,
-    Rook,
-    Knight,
-    Bishop,
-    Queen,
-    King,
-    //Null,
-}
+
+
 
 
 
@@ -109,5 +113,5 @@ mod tests {
     #[test]
     fn create_board() {
         Game::new();
-}
+    }
 }
