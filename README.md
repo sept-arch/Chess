@@ -1,4 +1,4 @@
-# Chess
+# Chess **WIP**
 
 ## Objective
 Create a fully offline game of chess between two human players with live time stats as an .exe file.
