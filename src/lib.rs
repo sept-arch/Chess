@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use bevy::prelude::Component;
 
-#[derive(Clone, Eq, Hash, PartialEq)] //easier to duplicate squares
+#[derive(Component, Clone, Eq, Hash, PartialEq)] //easier to duplicate squares
 pub struct Square {
     pub file: char,
     pub rank: usize,
@@ -112,7 +113,7 @@ pub struct Game {
     pub turn: Color,
     pub player1: Player,
     pub player2: Player,
-    pub piece_list: HashMap<usize, Option<Square>>,
+    pub piece_list: HashMap<usize, Option<Square>>, //rewrite so it is usize, (char, usize)
 }
 //idea, have each number correlate to a piece, and another thing where each number correlates to a square
 impl Game {
@@ -141,17 +142,17 @@ impl Game {
             rank4.push(Square::new(int_to_char.int_to_char[&n], 4, None));
             rank5.push(Square::new(int_to_char.int_to_char[&n], 5, None));
             rank6.push(Square::new(int_to_char.int_to_char[&n], 6, None));
-            rank7.push(Square::new(int_to_char.int_to_char[&n], 2, Some(Piece::new(Color::Black, PieceType::Pawn))));
+            rank7.push(Square::new(int_to_char.int_to_char[&n], 7, Some(Piece::new(Color::Black, PieceType::Pawn))));
         }
         let mut rank8: Vec<Square> = Vec::new();
-        rank8.push(Square::new('a', 1usize, Some(Piece::new(Color::Black, PieceType::Rook))));
-        rank8.push(Square::new('b', 1usize, Some(Piece::new(Color::Black, PieceType::Knight))));
-        rank8.push(Square::new('c', 1usize, Some(Piece::new(Color::Black, PieceType::Bishop))));
-        rank8.push(Square::new('d', 1usize, Some(Piece::new(Color::Black, PieceType::Queen))));
-        rank8.push(Square::new('e', 1usize, Some(Piece::new(Color::Black, PieceType::King))));
-        rank8.push(Square::new('f', 1usize, Some(Piece::new(Color::Black, PieceType::Bishop))));
-        rank8.push(Square::new('g', 1usize, Some(Piece::new(Color::Black, PieceType::Rook))));
-        rank8.push(Square::new('h', 1usize, Some(Piece::new(Color::Black, PieceType::Knight))));
+        rank8.push(Square::new('a', 8usize, Some(Piece::new(Color::Black, PieceType::Rook))));
+        rank8.push(Square::new('b', 8usize, Some(Piece::new(Color::Black, PieceType::Knight))));
+        rank8.push(Square::new('c', 8usize, Some(Piece::new(Color::Black, PieceType::Bishop))));
+        rank8.push(Square::new('d', 8usize, Some(Piece::new(Color::Black, PieceType::Queen))));
+        rank8.push(Square::new('e', 8usize, Some(Piece::new(Color::Black, PieceType::King))));
+        rank8.push(Square::new('f', 8usize, Some(Piece::new(Color::Black, PieceType::Bishop))));
+        rank8.push(Square::new('g', 8usize, Some(Piece::new(Color::Black, PieceType::Rook))));
+        rank8.push(Square::new('h', 8usize, Some(Piece::new(Color::Black, PieceType::Knight))));
         board.push(rank2);
         board.push(rank3);
         board.push(rank4);
@@ -185,8 +186,10 @@ impl Game {
         //check whose turn it is; check opposite's sides possible moves
         //go through the game.piece_list at either 1 or 17 (white or black)
         //see if any move involves the capture of 13 (white king) or 29 (black king)
+        //Want to figure out a way if a move would be illegal without moving anything
         if self.turn == Color::White {
-
+            //do a special_rights function here, match for castling and passant
+            false
         }
         else {
             false

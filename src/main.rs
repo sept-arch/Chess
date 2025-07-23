@@ -1,13 +1,14 @@
 use Chess::*;
-//Uncomment later; have it uncommented so compiler does not complain
+use bevy::prelude::*;
+//bevy is somewhat complicated but the best engine to use to have animations and move history
 
 fn main() {
-    //psuedo-code setup:
+    //pseudocode setup:
     //run the game::new() function,
     //run game::run() which returns the winner
     //bring up game over screen declaring winner
     //option to play again, or exit application
-    let game = Game::new();
+    App::new().add_systems(Update, Game::new()).run();
 
     //let winner : u8 = game::run();
     /*
