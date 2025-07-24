@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use bevy::prelude::Component;
+use bevy::prelude::*;
 
 #[derive(Component, Clone, Eq, Hash, PartialEq)] //easier to duplicate squares
 pub struct Square {
@@ -17,14 +17,14 @@ impl Square {
     }
 }
 
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Component, Clone, Eq, Hash, PartialEq)]
 pub struct Piece {
-    pub color: Color,
+    pub team: Team,
     pub captured: bool,
     pub piece_type: PieceType,
 }
 
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Component, Clone, Eq, Hash, PartialEq)]
 pub enum PieceType {
     Pawn,
     Rook,
@@ -36,16 +36,16 @@ pub enum PieceType {
 }
 
 
-#[derive(Clone, Eq, Hash, PartialEq)]
-pub enum Color {
+#[derive(Component, Clone, Eq, Hash, PartialEq)]
+pub enum Team {
     White,
     Black,
     //Null,
 }
 
 impl Piece {
-    pub fn new(color: Color, piece_type: PieceType) -> Self {
-        Piece { color, captured: false, piece_type, }
+    pub fn new(team: Team, piece_type: PieceType) -> Self {
+        Piece { team, captured: false, piece_type, }
     }
 }
 
@@ -71,29 +71,30 @@ impl IntToChar {
     }
 }
 
+#[derive(Component, Clone, Eq, Hash, PartialEq)]
 struct Player {
     check: bool,
     pieces: Vec<Piece>,
-    color: Color,
+    team: Team,
     material_advantage: usize,
 
 }
 
 impl Player {
 
-    pub fn new(color: Color) -> Player {
+    pub fn new(team: Team) -> Player {
         let mut pieces : Vec<Piece> = Vec::new();
         for _n in 1..9 {
-            pieces.push(Piece::new(color.clone(), PieceType::Pawn));
+            pieces.push(Piece::new(team.clone(), PieceType::Pawn));
         }
         for _n in 1..3 {
-            pieces.push(Piece::new(color.clone(), PieceType::Rook));
-            pieces.push(Piece::new(color.clone(), PieceType::Knight));
-            pieces.push(Piece::new(color.clone(), PieceType::Bishop));
+            pieces.push(Piece::new(team.clone(), PieceType::Rook));
+            pieces.push(Piece::new(team.clone(), PieceType::Knight));
+            pieces.push(Piece::new(team.clone(), PieceType::Bishop));
         }
-        pieces.push(Piece::new(color.clone(), PieceType::Queen));
-        pieces.push(Piece::new(color.clone(), PieceType::King));
-        Player { check: false, pieces, color, material_advantage: 0, }
+        pieces.push(Piece::new(team.clone(), PieceType::Queen));
+        pieces.push(Piece::new(team.clone(), PieceType::King));
+        Player { check: false, pieces, team, material_advantage: 0, }
     }
 
     pub fn material_captured(piece_type: PieceType) -> Result<u8, &'static str> {
@@ -108,9 +109,10 @@ impl Player {
     }
 }
 
+#[derive(Component)]
 pub struct Game {
     pub board: Vec<Vec<Square>>,
-    pub turn: Color,
+    pub turn: Team,
     pub player1: Player,
     pub player2: Player,
     pub piece_list: HashMap<usize, Option<Square>>, //rewrite so it is usize, (char, usize)
@@ -121,14 +123,14 @@ impl Game {
         let int_to_char = IntToChar::new();
         let mut board: Vec<Vec<Square>> = Vec::new();
         let mut rank: Vec<Square> = Vec::new();
-        rank.push(Square::new('a', 1usize, Some(Piece::new(Color::White, PieceType::Rook))));
-        rank.push(Square::new('b', 1usize, Some(Piece::new(Color::White, PieceType::Knight))));
-        rank.push(Square::new('c', 1usize, Some(Piece::new(Color::White, PieceType::Bishop))));
-        rank.push(Square::new('d', 1usize, Some(Piece::new(Color::White, PieceType::Queen))));
-        rank.push(Square::new('e', 1usize, Some(Piece::new(Color::White, PieceType::King))));
-        rank.push(Square::new('f', 1usize, Some(Piece::new(Color::White, PieceType::Bishop))));
-        rank.push(Square::new('g', 1usize, Some(Piece::new(Color::White, PieceType::Rook))));
-        rank.push(Square::new('h', 1usize, Some(Piece::new(Color::White, PieceType::Knight))));
+        rank.push(Square::new('a', 1usize, Some(Piece::new(Team::White, PieceType::Rook))));
+        rank.push(Square::new('b', 1usize, Some(Piece::new(Team::White, PieceType::Knight))));
+        rank.push(Square::new('c', 1usize, Some(Piece::new(Team::White, PieceType::Bishop))));
+        rank.push(Square::new('d', 1usize, Some(Piece::new(Team::White, PieceType::Queen))));
+        rank.push(Square::new('e', 1usize, Some(Piece::new(Team::White, PieceType::King))));
+        rank.push(Square::new('f', 1usize, Some(Piece::new(Team::White, PieceType::Bishop))));
+        rank.push(Square::new('g', 1usize, Some(Piece::new(Team::White, PieceType::Rook))));
+        rank.push(Square::new('h', 1usize, Some(Piece::new(Team::White, PieceType::Knight))));
         board.push(rank);
         let mut rank2: Vec<Square> = Vec::new();
         let mut rank3: Vec<Square> = Vec::new();
@@ -137,22 +139,22 @@ impl Game {
         let mut rank6: Vec<Square> = Vec::new();
         let mut rank7: Vec<Square> = Vec::new();
         for n in 1..9 {
-            rank2.push(Square::new(int_to_char.int_to_char[&n], 2, Some(Piece::new(Color::White, PieceType::Pawn))));
+            rank2.push(Square::new(int_to_char.int_to_char[&n], 2, Some(Piece::new(Team::White, PieceType::Pawn))));
             rank3.push(Square::new(int_to_char.int_to_char[&n], 3, None));
             rank4.push(Square::new(int_to_char.int_to_char[&n], 4, None));
             rank5.push(Square::new(int_to_char.int_to_char[&n], 5, None));
             rank6.push(Square::new(int_to_char.int_to_char[&n], 6, None));
-            rank7.push(Square::new(int_to_char.int_to_char[&n], 7, Some(Piece::new(Color::Black, PieceType::Pawn))));
+            rank7.push(Square::new(int_to_char.int_to_char[&n], 7, Some(Piece::new(Team::Black, PieceType::Pawn))));
         }
         let mut rank8: Vec<Square> = Vec::new();
-        rank8.push(Square::new('a', 8usize, Some(Piece::new(Color::Black, PieceType::Rook))));
-        rank8.push(Square::new('b', 8usize, Some(Piece::new(Color::Black, PieceType::Knight))));
-        rank8.push(Square::new('c', 8usize, Some(Piece::new(Color::Black, PieceType::Bishop))));
-        rank8.push(Square::new('d', 8usize, Some(Piece::new(Color::Black, PieceType::Queen))));
-        rank8.push(Square::new('e', 8usize, Some(Piece::new(Color::Black, PieceType::King))));
-        rank8.push(Square::new('f', 8usize, Some(Piece::new(Color::Black, PieceType::Bishop))));
-        rank8.push(Square::new('g', 8usize, Some(Piece::new(Color::Black, PieceType::Rook))));
-        rank8.push(Square::new('h', 8usize, Some(Piece::new(Color::Black, PieceType::Knight))));
+        rank8.push(Square::new('a', 8usize, Some(Piece::new(Team::Black, PieceType::Rook))));
+        rank8.push(Square::new('b', 8usize, Some(Piece::new(Team::Black, PieceType::Knight))));
+        rank8.push(Square::new('c', 8usize, Some(Piece::new(Team::Black, PieceType::Bishop))));
+        rank8.push(Square::new('d', 8usize, Some(Piece::new(Team::Black, PieceType::Queen))));
+        rank8.push(Square::new('e', 8usize, Some(Piece::new(Team::Black, PieceType::King))));
+        rank8.push(Square::new('f', 8usize, Some(Piece::new(Team::Black, PieceType::Bishop))));
+        rank8.push(Square::new('g', 8usize, Some(Piece::new(Team::Black, PieceType::Rook))));
+        rank8.push(Square::new('h', 8usize, Some(Piece::new(Team::Black, PieceType::Knight))));
         board.push(rank2);
         board.push(rank3);
         board.push(rank4);
@@ -160,8 +162,8 @@ impl Game {
         board.push(rank6);
         board.push(rank7);
         board.push(rank8);
-        let player1 = Player::new(Color::White);
-        let player2 = Player::new(Color::Black);
+        let player1 = Player::new(Team::White);
+        let player2 = Player::new(Team::Black);
         //piece_list
         let mut piece_list: HashMap<usize, Option<Square>> = HashMap::new();
         for n in 1..9 {
@@ -174,7 +176,7 @@ impl Game {
         board,
         player1,
         player2,
-        turn: Color::White,
+        turn: Team::White,
         piece_list,
         }
     }
@@ -187,7 +189,7 @@ impl Game {
         //go through the game.piece_list at either 1 or 17 (white or black)
         //see if any move involves the capture of 13 (white king) or 29 (black king)
         //Want to figure out a way if a move would be illegal without moving anything
-        if self.turn == Color::White {
+        if self.turn == Team::White {
             //do a special_rights function here, match for castling and passant
             false
         }
@@ -203,38 +205,38 @@ impl Game {
 //int_to_piece
 pub fn int_to_piece(n: usize) -> Result<Piece, &'static str> {
     let temp = HashMap::from([
-        (1, Piece::new(Color::White, PieceType::Pawn)),
-        (2, Piece::new(Color::White, PieceType::Pawn)),
-        (3, Piece::new(Color::White, PieceType::Pawn)),
-        (4, Piece::new(Color::White, PieceType::Pawn)),
-        (5, Piece::new(Color::White, PieceType::Pawn)),
-        (6, Piece::new(Color::White, PieceType::Pawn)),
-        (7, Piece::new(Color::White, PieceType::Pawn)),
-        (8, Piece::new(Color::White, PieceType::Pawn)),
-        (9, Piece::new(Color::White, PieceType::Rook)),
-        (10, Piece::new(Color::White, PieceType::Knight)),
-        (11, Piece::new(Color::White, PieceType::Bishop)),
-        (12, Piece::new(Color::White, PieceType::Queen)),
-        (13, Piece::new(Color::White, PieceType::King)),
-        (14, Piece::new(Color::White, PieceType::Bishop)),
-        (15, Piece::new(Color::White, PieceType::Knight)),
-        (16, Piece::new(Color::White, PieceType::Rook)),
-        (17, Piece::new(Color::Black, PieceType::Pawn)),
-        (18, Piece::new(Color::Black, PieceType::Pawn)),
-        (19, Piece::new(Color::Black, PieceType::Pawn)),
-        (20, Piece::new(Color::Black, PieceType::Pawn)),
-        (21, Piece::new(Color::Black, PieceType::Pawn)),
-        (22, Piece::new(Color::Black, PieceType::Pawn)),
-        (23, Piece::new(Color::Black, PieceType::Pawn)),
-        (24, Piece::new(Color::Black, PieceType::Pawn)),
-        (25, Piece::new(Color::Black, PieceType::Rook)),
-        (26, Piece::new(Color::Black, PieceType::Knight)),
-        (27, Piece::new(Color::Black, PieceType::Bishop)),
-        (28, Piece::new(Color::Black, PieceType::Queen)),
-        (29, Piece::new(Color::Black, PieceType::King)),
-        (30, Piece::new(Color::Black, PieceType::Bishop)),
-        (31, Piece::new(Color::Black, PieceType::Knight)),
-        (32, Piece::new(Color::Black, PieceType::Rook)),
+        (1, Piece::new(Team::White, PieceType::Pawn)),
+        (2, Piece::new(Team::White, PieceType::Pawn)),
+        (3, Piece::new(Team::White, PieceType::Pawn)),
+        (4, Piece::new(Team::White, PieceType::Pawn)),
+        (5, Piece::new(Team::White, PieceType::Pawn)),
+        (6, Piece::new(Team::White, PieceType::Pawn)),
+        (7, Piece::new(Team::White, PieceType::Pawn)),
+        (8, Piece::new(Team::White, PieceType::Pawn)),
+        (9, Piece::new(Team::White, PieceType::Rook)),
+        (10, Piece::new(Team::White, PieceType::Knight)),
+        (11, Piece::new(Team::White, PieceType::Bishop)),
+        (12, Piece::new(Team::White, PieceType::Queen)),
+        (13, Piece::new(Team::White, PieceType::King)),
+        (14, Piece::new(Team::White, PieceType::Bishop)),
+        (15, Piece::new(Team::White, PieceType::Knight)),
+        (16, Piece::new(Team::White, PieceType::Rook)),
+        (17, Piece::new(Team::Black, PieceType::Pawn)),
+        (18, Piece::new(Team::Black, PieceType::Pawn)),
+        (19, Piece::new(Team::Black, PieceType::Pawn)),
+        (20, Piece::new(Team::Black, PieceType::Pawn)),
+        (21, Piece::new(Team::Black, PieceType::Pawn)),
+        (22, Piece::new(Team::Black, PieceType::Pawn)),
+        (23, Piece::new(Team::Black, PieceType::Pawn)),
+        (24, Piece::new(Team::Black, PieceType::Pawn)),
+        (25, Piece::new(Team::Black, PieceType::Rook)),
+        (26, Piece::new(Team::Black, PieceType::Knight)),
+        (27, Piece::new(Team::Black, PieceType::Bishop)),
+        (28, Piece::new(Team::Black, PieceType::Queen)),
+        (29, Piece::new(Team::Black, PieceType::King)),
+        (30, Piece::new(Team::Black, PieceType::Bishop)),
+        (31, Piece::new(Team::Black, PieceType::Knight)),
+        (32, Piece::new(Team::Black, PieceType::Rook)),
     ]);
     if temp.contains_key(&n) {
         Ok(temp[&n].clone())
@@ -253,7 +255,7 @@ mod tests {
     use super::*;
     #[test]
     fn make_piece() {
-        Piece::new(Color::Black, PieceType::Pawn);
+        Piece::new(Team::Black, PieceType::Pawn);
     }
     #[test]
     fn make_square() {
