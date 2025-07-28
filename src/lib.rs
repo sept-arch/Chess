@@ -492,19 +492,218 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 //legal move check required
 //go through ids, and then the squares using a query
+//helper function: see if square is occupied: if it is, it returns the piece. If not, None
+fn piece_at_position(
+    query: &Vec<(Square, Option<Piece>, Position)>,
+    target: Position,
+) -> Option<&Option<Piece>> {
+    query.iter().find(|(_, _, position)| *position == target).map(|_, piece, _| piece)
+}
 //helper function
-pub fn possible_moves(game: &Game, query: Vec<(Square, Piece, Position)>) -> HashMap<usize, Vec<Square>> {
+pub fn possible_moves(game: &Game, query: Vec<(Square, Option<Piece>, Position)>) -> HashMap<usize, Vec<(Square, Position)>> {
+    let possible: HashMap<usize, Vec<(Square, Position)>> = HashMap::new();
     if game.turn == Team::White {
         for (square, piece, position) in query.iter() {
             let mut moves: Square = Vec::new();
-            if piece.team == Team::White {
-                match piece.id {
-                    //pawns
-                    1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 => {
+            if let Some(piece) = piece {
+                if piece.team == Team::White {
+                    match piece.id {
+                        //white pawns
+                        1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 => {
+                            //check square in front to see if it is occupied
+                            //use helper function to find if a specific square is occupied
+                            let front = Position {x: position.x, y: position.y + 1};
+                            if piece_at_position(&query, &front) == None {
+                                //**NOTE** PLEASE FIX THE SQUARE: IT IS NOT THE SAME AS FRONT: DO SOME ASCII MATH
+                                moves.push(Square {file: char::from_u32(97 + position.x), rank: position.y + 2, id: None }, front);
+                            }
+                            //As far as I am aware, there should be no reason a pawn is in this file without having made any moves
+                            if (square.file == 2 && piece_at_position(&query, Position {x: position.x, y: position.y + 2})) {
+                                //HERE TOO
+                                moves.push(Square {file: char::from_u32(97 + position.x), rank: position.y + 3, id: None }, Position{x: position.x, y: position.y + 2});
+                            }
+                            /*right diagonal potential capture; must consider if a piece is on the
+                            edge of the board*/
+                            if piece.rank != 'h' {
+                                let enemy = Position {x: position.x + 1, y: position.y + 1};
+                                if piece_at_position(&query, &enemy).unwrap().team == Team::Black {
+                                //DON'T MAKE THE SAME MISTAKE
+                                    moves.push(Square {file: char::from_u32(98 + position.x), rank: position.y + 2,  id: piece_at_position(&query, &enemy).map(|p| p.id)},  enemy);
+                                }
+                            }
+                            // left diagonal
+                            if piece.rank != 'a' {
+                                let enemy = Position {x: position.x - 1, y: position.y + 1};
+                                if piece_at_position(&query, &enemy).unwrap().team == Team::Black {
+                                    moves.push(Square {file: char::from_u32(96 + position.x), rank: position.y + 2,  id: piece_at_position(&query, &enemy).map(|p| p.id)},  enemy);
+                                }
+                            }
+                        }
+                        //rooks
+                        9 | 16 => {
+                            //loop horizontal and vertical movement until the edge of the board is reached,
+                            //or a piece that can be captured is reached, or a piece that is on the same team
+                            //loop for left movement
+                            if piece.file != 'a' {
+                                let mut side = Position {x: position.x - 1, y: position.y};
+                                //if square is empty, add to list
+                                while piece_at_position(&query, &side) == None {
+                                    moves.push(Square {file: char::from_u32(97 + side.x), rank: side.y,  id: None},  side);
+                                    if side.x == 0 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x - 1, y: side.y};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + side.x), rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side);
+                                }
+                            }
+                            //loop for right movement
+                            if piece.file != 'h' {
+                                let mut side = Position {x: position.x + 1, y: position.y};
+                                while piece_at_position(&query, &side) == None {
+                                    moves.push(Square {file: char::from_u32(97 + side.x), rank: side.y,  id: None},  side);
+                                    if side.x == 7 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x + 1, y: side.y};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + side.x), rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side);
+                                }
+                            }
+                            //upward movement
+                            if piece.rank != 8 {
+                                let mut side = Position {x: position.x, y: position.y + 1};
+                                while piece_at_position(&query, &side) == None {
+                                    //y is + 1 because side is position based
+                                    moves.push(Square {file: square.file, rank: side.y + 1,  id: None},  side);
+                                    if side.y == 7 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x, y: side.y + 1};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: square.file, rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side);
+                                }
+                            }
+                            //downward
+                            if piece.rank != 1 {
+                                let mut side = Position {x: position.x, y: position.y - 1};
+                                while piece_at_position(&query, &side) == None {
+                                    //y is + 1 because side is position based
+                                    moves.push(Square {file: square.file, rank: side.y + 1,  id: None},  side);
+                                    if side.y == 0 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x, y: side.y - 1};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: square.file, rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side);
+                                }
+                            }
+                        }
+                        //knights
+                        10 | 15 => {
+                            //here on out, use positions instead of ranks and files
+                            //would use a more efficient system, but I want to avoid corner cases screwing up code,
+                            //so I will go L by L
+                            //horizontal upper left
+                            if position.x > 1 && position.y < 7 {
+                                let potential = Position {x: position.x - 2, y: position.y + 1};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + potential.x), rank: potential.y + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  potential);
+                                }
+                            }
+                            //vertical upper left
+                            if position.x > 0 && position.y < 6 {
+                                let potential = Position {x: position.x - 1, y: position.y + 2};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + potential.x), rank: potential.y + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  potential);
+                                }
+                            }
+                            //vertical upper right
+                            if position.x < 7 && position.y < 6 {
+                                let potential = Position {x: position.x + 1, y: position.y + 2};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + potential.x), rank: potential.y + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  potential);
+                                }
+                            }
+                            //horizontal upper right
+                            if position.x < 6 && position.y < 7 {
+                                let potential = Position {x: position.x + 2, y: position.y + 1};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + potential.x), rank: potential.y + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  potential);
+                                }
+                            }
+                            //horizontal lower right
+                            if position.x < 6 && position.y > 0 {
+                                let potential = Position {x: position.x + 2, y: position.y - 1};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + potential.x), rank: potential.y + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  potential);
+                                }
+                            }
+                            //vertical lower right
+                            if position.x < 7 && position.y > 1 {
+                                let potential = Position {x: position.x + 1, y: position.y - 2};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + potential.x), rank: potential.y + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  potential);
+                                }
+                            }
+                            //vertical lower left
+                            if position.x > 0 && position.y > 1 {
+                                let potential = Position {x: position.x - 1, y: position.y - 2};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + potential.x), rank: potential.y + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  potential);
+                                }
+                            }
+                            //horizontal lower left
+                            if position.x > 1 && position.y > 0 {
+                                let potential = Position {x: position.x - 2, y: position.y - 1};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + potential.x), rank: potential.y + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  potential);
+                                }
+                            }
+                        }
+                        //bishops
+                        11 | 14 => {
+                            //up and right
+                            let mut temp = Position {x: position.x + 1, y: position.y + 1};
+                            while temp.x < 7 && temp.y < 7 {
+                                if piece_at_position(&query, &temp) == None {
+                                    moves.push(Square {file: char::from_u32(97 + temp.x), rank: temp.y + 1, id: None}, temp);
+                                }
+                                else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push(Square {file: char::from_u32(97 + temp.x), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id)}, temp);
+                                    break;
+                                }
+                                //white piece is in the way
+                                else {
+                                    break;
+                                }
+                                temp = Position {x: temp.x + 1, y: temp.y + 1};
+                            }
+                        }
+                        //queen
+                        12 => {
 
+                        }
+                        //king
+                        13 => {
+
+                        }
                     }
                 }
             }
+            possible.insert(piece.id, moves);
         }
     }
     else {
