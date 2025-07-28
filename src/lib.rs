@@ -691,6 +691,7 @@ pub fn possible_moves(game: &Game, query: Vec<(Square, Option<Piece>, Position)>
                                 }
                                 temp = Position {x: temp.x + 1, y: temp.y + 1};
                             }
+                            //upper left
                         }
                         //queen
                         12 => {
