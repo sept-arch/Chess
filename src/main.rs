@@ -1,6 +1,6 @@
 use Chess::*;
 use bevy::prelude::*;
-
+mod game;
 
 
 fn main() {
