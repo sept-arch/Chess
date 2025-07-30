@@ -6,8 +6,9 @@ const BOARD_SIZE: usize = 8;
 const LIGHT_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 const DARK_COLOR: Color = Color::rgb(0.2, 0.2, 0.2);
 
+
 //for math
-#[derive(Component)]
+#[derive(Component, Clone, Eq, Hash, PartialEq, Copy)]
 pub struct Position {
     pub x: usize,
     pub y: usize,
@@ -96,7 +97,7 @@ impl IntToChar {
 }
 
 #[derive(Component, Clone, Eq, Hash, PartialEq)]
-struct Player {
+pub struct Player {
     check: bool,
     team: Team,
     material_advantage: usize,
@@ -249,3 +250,243 @@ pub fn setup_camera(mut commands: Commands) {
     });
 }
 
+pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let offset = TILE_SIZE * (BOARD_SIZE as f32) / 2.0;
+
+    for row in 2..BOARD_SIZE - 2 {
+        for col in 'a'..='h' {
+            let is_light = (row + (col as usize - 'a' as usize)) % 2 == 0;
+            let color = if is_light { LIGHT_COLOR } else { DARK_COLOR };
+
+            let x = ((col as u8 - b'a') as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+            let y = (row as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+            let char_to_usize = col as usize - 97;
+            let pos = Position {x: char_to_usize, y: row};
+            commands.spawn((SpriteBundle {
+                sprite: Sprite {
+                    color,
+                    custom_size: Some(Vec2::splat(TILE_SIZE)),
+                    ..default()
+                },
+                transform: Transform::from_xyz(x, y, 0.0),
+                ..default()
+            },
+                            Square::new(col, row + 1, None), pos
+            ));
+        }
+    }
+    //pawn squares; need to put ids
+    //sure there was some way to do this more efficiently
+    //white pawn squares
+    for n in 'a'..='h' {
+        let is_light = (1 + (n as usize - 'a' as usize)) % 2 == 0;
+        let color = if is_light { LIGHT_COLOR } else { DARK_COLOR };
+
+        let x = ((n as u8 - b'a') as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+        let y = (1 as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+
+        let char_to_usize = n as usize - 97;
+        let pos = Position {x: char_to_usize,y:  1};
+        commands.spawn((SpriteBundle {
+            sprite: Sprite {
+                color,
+                custom_size: Some(Vec2::splat(TILE_SIZE)),
+                ..default()
+            },
+            transform: Transform::from_xyz(x, y, 0.0),
+            ..default()
+        },
+                        Square::new(n, 2, Some(n as usize - 'a' as usize)), pos
+        ));
+    }
+    //black pawns
+    for n in 'a'..='h' {
+        let is_light = ((n as usize - 'a' as usize)) % 2 == 0;
+        let color = if is_light { LIGHT_COLOR } else { DARK_COLOR };
+
+        let x = ((n as u8 - b'a') as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+        let y = (0 as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+
+        let char_to_usize = n as usize - 97;
+        let pos = Position {x: char_to_usize, y: 0};
+        commands.spawn((SpriteBundle {
+            sprite: Sprite {
+                color,
+                custom_size: Some(Vec2::splat(TILE_SIZE)),
+                ..default()
+            },
+            transform: Transform::from_xyz(x, y, 0.0),
+            ..default()
+        },
+                        Square::new(n, 1, Some((n as usize - 'a' as usize) + 8)), pos
+        ));
+    }
+    for n in 'a'..='h' {
+        let is_light = (6 + (n as usize - 'a' as usize)) % 2 == 0;
+        let color = if is_light { LIGHT_COLOR } else { DARK_COLOR };
+
+        let x = ((n as u8 - b'a') as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+        let y = (6 as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+
+
+        let char_to_usize = n as usize - 97;
+        let pos = Position {x: char_to_usize,y:  6};
+        commands.spawn((SpriteBundle {
+            sprite: Sprite {
+                color,
+                custom_size: Some(Vec2::splat(TILE_SIZE)),
+                ..default()
+            },
+            transform: Transform::from_xyz(x, y, 0.0),
+            ..default()
+        },
+                        Square::new(n, 7, Some(n as usize - 'a' as usize)), pos
+        ));
+    }
+    for n in 'a'..='h' {
+        let is_light = (7 + (n as usize - 'a' as usize)) % 2 == 0;
+        let color = if is_light { LIGHT_COLOR } else { DARK_COLOR };
+
+        let x = ((n as u8 - b'a') as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+        let y = (7 as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+
+        let char_to_usize = n as usize - 97;
+        let pos = Position {x: char_to_usize, y: 7};
+
+        commands.spawn((SpriteBundle {
+            sprite: Sprite {
+                color,
+                custom_size: Some(Vec2::splat(TILE_SIZE)),
+                ..default()
+            },
+            transform: Transform::from_xyz(x, y, 0.0),
+            ..default()
+        },
+                        Square::new(n, 8, Some(n as usize - 'a' as usize)), pos
+        ));
+    }
+    //pawns
+    let white_pawn = asset_server.load("pieces/white_pawn.png");
+    let black_pawn = asset_server.load("pieces/black_pawn.png");
+    let y_white = 1f32 * TILE_SIZE - offset + TILE_SIZE / 2.0;
+    let y_black = 6f32 * TILE_SIZE - offset + TILE_SIZE / 2.0;
+    for col in 0..8 {
+        let x = (col as f32) * TILE_SIZE - offset + TILE_SIZE / 2.0;
+        let usize_to_char: Option<char> = char::from_u32(97 + col as u32);
+        commands.spawn((SpriteBundle {
+            texture: white_pawn.clone(),
+            transform: Transform::from_xyz(x, y_white, 0.0),
+            ..default()
+        }, Square::new(usize_to_char.expect("WTF"),1usize, Some(col + 1)), Piece::new(Team::White, PieceType::Pawn, col + 1), Select, Position { x: col, y: 1 }
+        ));
+        commands.spawn((SpriteBundle {
+            texture: black_pawn.clone(),
+            transform: Transform::from_xyz(x, y_black, 0.0),
+            ..default()
+        }, Square::new(usize_to_char.expect("WTF"), 7usize, Some(col + 1)), Piece::new(Team::Black, PieceType::Pawn, col + 9), Select, Position { x: col, y: 6 }
+        ));
+    }
+    //rest of the pieces
+    //rooks
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/white_rook.png"),
+        transform: Transform::from_xyz(TILE_SIZE / 2.0 - offset, TILE_SIZE / 2.0 - offset, 0.0),
+        ..default()
+    }, Square::new('h', 1usize, Some(16)), Piece::new(Team::White, PieceType::Rook, 16), Select, Position{x: 0, y: 0}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/white_rook.png"),
+        transform: Transform::from_xyz( 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
+        ..default()
+    }, Square::new('a', 1usize, Some(9)), Piece::new(Team::White, PieceType::Rook, 9), Select, Position{x: 7, y: 0}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/white_knight.png"),
+        transform: Transform::from_xyz( 1f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
+        ..default()
+    }, Square::new('g', 1usize, Some(15)), Piece::new(Team::White, PieceType::Knight, 15), Select, Position{x: 1, y: 0}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/white_knight.png"),
+        transform: Transform::from_xyz( 6f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
+        ..default()
+    }, Square::new('b', 1usize, Some(10)), Piece::new(Team::White, PieceType::Knight, 10), Select, Position{x: 6, y: 0}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/white_bishop.png"),
+        transform: Transform::from_xyz( 2f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
+        ..default()
+    }, Square::new('g', 1usize, Some(11)), Piece::new(Team::White, PieceType::Bishop, 11), Select, Position{x:2, y: 0}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/white_bishop.png"),
+        transform: Transform::from_xyz( 5f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
+        ..default()
+    }, Square::new('c', 1usize, Some(14)), Piece::new(Team::White, PieceType::Bishop, 14), Select, Position{x: 5, y: 0}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/white_king.png"),
+        transform: Transform::from_xyz( 4f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
+        ..default()
+    }, Square::new('e', 1usize, Some(13)), Piece::new(Team::White, PieceType::King, 13), Select, Position{x:4, y: 0}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/white_queen.png"),
+        transform: Transform::from_xyz( 3f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
+        ..default()
+    }, Square::new('d', 1usize, Some(12)), Piece::new(Team::White, PieceType::Queen, 12), Select, Position{x:3, y: 0}
+    ));
+    //black pieces
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/black_rook.png"),
+        transform: Transform::from_xyz(TILE_SIZE / 2.0 - offset, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        ..default()
+    }, Square::new('h', 8usize, Some(32)), Piece::new(Team::Black, PieceType::Rook, 32), Select, Position{x:7, y: 7}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/black_rook.png"),
+        transform: Transform::from_xyz( 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        ..default()
+    }, Square::new('a', 8usize, Some(25)), Piece::new(Team::Black, PieceType::Rook, 25), Select, Position{x:0, y: 7}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/black_knight.png"),
+        transform: Transform::from_xyz( 1f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        ..default()
+    }, Square::new('g', 8usize, Some(31)), Piece::new(Team::Black, PieceType::Knight, 31), Select, Position{x:6, y: 7}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/black_knight.png"),
+        transform: Transform::from_xyz( 6f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        ..default()
+    }, Square::new('b', 8usize, Some(26)), Piece::new(Team::Black, PieceType::Knight, 26), Select, Position{x:1, y: 7}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/black_bishop.png"),
+        transform: Transform::from_xyz( 2f32 * TILE_SIZE - offset + TILE_SIZE / 2.0,7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        ..default()
+    }, Square::new('f', 8usize, Some(30)), Piece::new(Team::Black, PieceType::Bishop, 30), Select, Position{x:5, y: 7}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/black_bishop.png"),
+        transform: Transform::from_xyz( 5f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        ..default()
+    }, Square::new('c', 8usize, Some(27)), Piece::new(Team::Black, PieceType::Bishop, 27), Select, Position{x:2, y: 7}
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/black_king.png"),
+        transform: Transform::from_xyz( 4f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        ..default()
+    }, Square::new('e', 8usize, Some(29)), Piece::new(Team::Black, PieceType::King, 29), Select, Position{x:4, y: 7}
+
+    ));
+    commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/black_queen.png"),
+        transform: Transform::from_xyz( 3f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        ..default()
+    }, Square::new('d', 8usize, Some(28)), Piece::new(Team::Black, PieceType::Queen, 28), Select, Position{x:3, y: 7}
+    ));
+}
+
+#[derive(Component)]
+pub struct Select;

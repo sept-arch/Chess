@@ -1,7 +1,7 @@
-use Chess::*;
 use bevy::prelude::*;
 mod game;
-
+use crate::game::*;
+use Chess::*;
 
 fn main() {
     //pseudocode setup:
@@ -27,7 +27,7 @@ fn main() {
     */
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_systems(Startup, (Chess::setup_camera, Chess::setup_board))
+        .add_systems(Startup, (setup_camera, setup_board))
         .run();
 }
 
