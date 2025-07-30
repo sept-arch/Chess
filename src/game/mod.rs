@@ -7,6 +7,12 @@ use std::collections::HashMap;
 
 
 
+//to be used in possible_moves as an argument
+fn make_board(query: Query<(&Square, Option<&Piece>, &Position)>) -> Vec<(Square, Option<Piece> , Position)> {
+
+query.iter().map(|(square, piece_opt, position)| (square.clone(), piece_opt.clone().map(|p| p.clone()), position.clone())).collect()
+
+}
 
 //legal move check required
 //go through ids, and then the squares using a query
@@ -19,9 +25,9 @@ fn piece_at_position<'a>(
 }
 
 //helper function
-pub fn possible_moves(game: &Game, query: Vec<(Square, Option<Piece>, Position)>) -> HashMap<usize, Vec<(Square, Position)>> {
+pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>) -> HashMap<usize, Vec<(Square, Position)>> {
     let mut possible: HashMap<usize, Vec<(Square, Position)>> = HashMap::new();
-    if game.turn == Team::White {
+    if team == Team::White {
         for (square, piece, position) in query.iter() {
             let mut moves: Vec<(Square, Position)> = Vec::new();
             if let Some(piece) = piece {
@@ -459,4 +465,49 @@ pub fn possible_moves(game: &Game, query: Vec<(Square, Option<Piece>, Position)>
         }
     }
     possible
+}
+
+//default potential move marker
+#[derive(Component)]
+struct Marker;
+
+#[derive(Component, Clone, Eq, Hash, PartialEq)]
+enum MoveType {
+    Move,
+    Capture,
+    Castle,
+}
+
+//I get the hashmap from possible_moves, use commands to spawn in the moves when clicked, asset_server for the pngs, and query to give me the pieces in the ecs itself
+//the two spaces forward move is already taken care of, as well as potential pawn captures. I need to differentiate between captures and non-captures now
+//Reminder: Possible moves tracks the square and if there is already a piece on it
+
+pub fn legal_moves(possible: HashMap<usize, Vec<(Square, Position)>>, mut commands: Commands, asset_server: Res<AssetServer>, query: Query<(Entity, &Position), With<Piece>>, game: &Game) {
+    //first, we need to find out if we are in check. If any move involves capturing the black king, then it is in check. It does not account for castling; it needs to be added later
+    if check(&possible, &game) {
+        let mut test = possible.clone();
+    }
+
+    else {
+        //do the command.spawns and carry on as planned
+
+    }
+
+}
+
+//I'm making the check function first
+pub fn check(possible: &HashMap<usize, Vec<(Square, Position)>>, game: &Game) -> bool {
+    for n in possible.values() {
+        for (sq, pos) in n {
+            if game.turn == Team::White {
+                if sq.id == Some(13) { return true; }
+            }
+            else {
+                if sq.id == Some(29) { return true;}
+            }
+        }
+    }
+
+    return false;
+
 }

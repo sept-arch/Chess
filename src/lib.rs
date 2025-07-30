@@ -30,12 +30,7 @@ impl Square {
     }
 }
 
-#[derive(Component, Clone, Eq, Hash, PartialEq)]
-enum MoveType {
-    Move,
-    Capture,
-    Castle,
-}
+
 
 
 
