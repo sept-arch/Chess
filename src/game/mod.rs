@@ -4,6 +4,8 @@ use bevy::prelude::*;
 use std::collections::HashMap;
 
 
+const TILE_SIZE: f32 = 90.0;
+const BOARD_SIZE: usize = 8;
 //to be used in possible_moves as an argument
 fn make_board(query: Query<(&Square, Option<&Piece>, &Position)>) -> Vec<(Square, Option<Piece> , Position)> {
 
@@ -536,22 +538,23 @@ pub struct Selected {
 
 //piece and its destination
 #[derive(Component)]
-struct MoveTarget {
+pub struct MoveTarget {
     from: Entity,
     to: Position,
 }
 
 //function to select pieces
 pub fn select_piece_system (mut selected: ResMut<Selected>, windows: Query<&Window>, camera_q: Query<(&Camera, &GlobalTransform)>,
-piece_query: Query<(Entity, &Piece, &Position)>,
+piece_query: Query<(Entity, &Piece, &Position)>, mouse_buttons: Res<Input<MouseButton>>,
 ) {
     //if left click, then find the respective position on the board
     let window = windows.single();
-    if let Some(cursor_pos) = window.cursor_position() {
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        let Some(cursor_pos) = window.cursor_position() else {return};
         let (camera, cam_transform) = camera_q.single();
         let world_pos = camera.viewport_to_world_2d(cam_transform, cursor_pos).unwrap();
-        const TILE_SIZE: f32 = 90.0;
-        const BOARD_SIZE: usize = 8;
+       // const TILE_SIZE: f32 = 90.0;
+        //const BOARD_SIZE: usize = 8;
 
         let half = TILE_SIZE * (BOARD_SIZE as f32) / 2.0;
         let x = ((world_pos.x + half) / TILE_SIZE.floor()) as isize;
@@ -574,8 +577,8 @@ piece_query: Query<(Entity, &Piece, &Position)>,
 
 pub fn highlight_moves_system (mut commands: Commands, selected: Res<Selected>, mut cleanup: Query<Entity, With<Marker>>, piece_query: Query<(Entity, &Piece, &Position)>,
 board_snapshot_query: Query<(&Square, &Piece, &Position)>, asset_server: Res<AssetServer>, game: Res<Game>) {
-    const TILE_SIZE: f32 = 90.0;
-    const BOARD_SIZE: usize = 8;
+    //const TILE_SIZE: f32 = 90.0;
+    //const BOARD_SIZE: usize = 8;
     for entity in cleanup.iter() {
         commands.entity(entity).despawn();
     }
@@ -601,20 +604,71 @@ board_snapshot_query: Query<(&Square, &Piece, &Position)>, asset_server: Res<Ass
             let world_x = (destination_pos.x as f32) * TILE_SIZE - (TILE_SIZE * 8.0 / 2.0) + TILE_SIZE / 2.0;
             let world_y = (destination_pos.y as f32) * TILE_SIZE - (TILE_SIZE * 8.0 / 2.0) + TILE_SIZE / 2.0;
 
+
+            let mut legal = "";
+            //bool to see if the potential move spawns a black or white square, and capture or legal
+            if (destination_pos.x + destination_pos.y) % 2 == 0 {
+                if square.id.is_some() {
+                    legal = "board\\white_capture.png";
+                }
+                else {
+                    legal = "board\\white_legal.png";
+                }
+            }
+            else {
+                if square.id.is_some() {
+                    legal = "board\\black_capture.png";
+                }
+                else {
+                    legal = "board\\black_legal.png";
+                }
+            }
+            let potential = asset_server.load(legal);
             commands.spawn((
                 Marker,
                 MoveTarget { from: from_entity, to: *destination_pos },
                 SpriteBundle {
                     //NOTE: I want this to be a circle that I have in my assets folder rather than the green highlight
-                    sprite: Sprite {
+                    /*sprite: Sprite {
                         color: Color::rgba(0.0, 1.0, 0.0, 0.5), // translucent highlight
                         custom_size: Some(Vec2::splat(TILE_SIZE * 0.6)),
                         ..default()
-                    },
+                    },*/
+                    texture: potential,
                     transform: Transform::from_xyz(world_x, world_y, 1.0),
                     ..default()
                 },
             ));
+        }
+    }
+}
+
+pub fn commit_move_system(mut commands: Commands, windows: Query<&Window>,
+    camera_q: Query<&Camera, &GlobalTransform>, mut piece_q: Query<(&mut Position, &mut Transform, &Piece, Entity)>,
+  marker_q: Query<(&MoveTarget, &Transform, Entity), (With<Marker>, Without<Piece>)>, mut selected: ResMut<Selected>,
+  mouse_buttons: Res<Input<MouseButton>>, board_snapshot_q: Query<(&Square, &Piece, &Position), Without<Transform>>
+) {
+
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        for (move_target, marker_transform, marker_entity) in marker_q.iter() {
+            let from = move_target.from;
+            let to = move_target.to;
+
+            //updates piece
+            if let Ok((mut pos, mut transform, _piece, entity)) = piece_q.get_mut(from) {
+                pos.x = to.x;
+                pos.y = to.y;
+                let half = TILE_SIZE * (8.0 / 2.0);
+                transform.translation.x = (to.x as f32) * TILE_SIZE - half + TILE_SIZE / 2.0;
+                transform.translation.y = (to.y as f32) * TILE_SIZE - half + TILE_SIZE / 2.0;
+            }
+            //Once piece is updated, if it is a capture, captured piece needs to despawn
+            //added board snapshot_query
+            selected.piece = None;
+            /*for (_, _, entity) in marker_q.iter() {
+                commands.entity(entity).despawn();
+            }*/
+            break;
         }
     }
 }

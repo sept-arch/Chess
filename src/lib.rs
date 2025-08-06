@@ -336,7 +336,7 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
             texture: black_pawn.clone(),
             transform: Transform::from_xyz(x, y_black, 0.0),
             ..default()
-        }, Square::new(usize_to_char.expect("WTF"), 7usize, Some(col + 1)), Piece::new(Team::Black, PieceType::Pawn, col + 9),  Position { x: col, y: 6 }
+        }, Square::new(usize_to_char.expect("WTF"), 7usize, Some(col + 17)), Piece::new(Team::Black, PieceType::Pawn, col + 17),  Position { x: col, y: 6 }
         ));
     }
     //rest of the pieces

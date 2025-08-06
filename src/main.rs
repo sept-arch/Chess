@@ -30,7 +30,7 @@ fn main() {
         .add_systems(Startup, (setup_camera, setup_board))
         .insert_resource(Selected::default())
         .insert_resource(Game::new())
-        .add_systems(Update, (select_piece_system, highlight_moves_system.after(select_piece_system)))
+        .add_systems(Update, (select_piece_system, highlight_moves_system.after(select_piece_system), commit_move_system.after(highlight_moves_system)))
         .run();
 }
 
