@@ -635,7 +635,7 @@ board_snapshot_query: Query<(&Square, &Piece, &Position)>, asset_server: Res<Ass
                         ..default()
                     },*/
                     texture: potential,
-                    transform: Transform::from_xyz(world_x, world_y, 1.0),
+                    transform: Transform::from_xyz(world_x, world_y, 0.5),
                     ..default()
                 },
             ));
@@ -644,16 +644,42 @@ board_snapshot_query: Query<(&Square, &Piece, &Position)>, asset_server: Res<Ass
 }
 
 pub fn commit_move_system(mut commands: Commands, windows: Query<&Window>,
-    camera_q: Query<&Camera, &GlobalTransform>, mut piece_q: Query<(&mut Position, &mut Transform, &Piece, Entity)>,
+    camera_q: Query<(&Camera, &GlobalTransform)>, mut piece_q: Query<(&mut Position, &mut Transform, &Piece, Entity)>,
   marker_q: Query<(&MoveTarget, &Transform, Entity), (With<Marker>, Without<Piece>)>, mut selected: ResMut<Selected>,
-  mouse_buttons: Res<Input<MouseButton>>, board_snapshot_q: Query<(&Square, &Piece, &Position), Without<Transform>>
+  mouse_buttons: Res<Input<MouseButton>>, board_snapshot_q: Query<(&mut Square, &mut Piece, &mut Position, Entity,), Without<Transform>>,
 ) {
-
+    let window = windows.single();
     if mouse_buttons.just_pressed(MouseButton::Left) {
+        //default value
+        let mut move_t = Position { x: 0, y: 0 };
+        //copy and pasted from select piece system
+        let Some(cursor_pos) = window.cursor_position() else {return};
+        let (camera, cam_transform) = camera_q.single();
+        let world_pos = camera.viewport_to_world_2d(cam_transform, cursor_pos).unwrap();
+
+        let half = TILE_SIZE * (BOARD_SIZE as f32) / 2.0;
+        let x1 = ((world_pos.x + half) / TILE_SIZE.floor()) as isize;
+        let y1 = ((world_pos.y + half) / TILE_SIZE.floor()) as isize;
+
+        let actual_move = Position {x: x1 as usize, y: y1 as usize };
+
+
         for (move_target, marker_transform, marker_entity) in marker_q.iter() {
+
+            //modify so that mouseclick must equal move_target to, and the first option is not picked
+            if actual_move.x != move_target.to.x || actual_move.y != move_target.to.y {
+                continue;
+            }
             let from = move_target.from;
             let to = move_target.to;
 
+            for (sq, pc, pos, ent) in board_snapshot_q.iter() {
+                if pos.x == to.x && pos.y == to.y {
+                    if Some(pc).is_some() {
+                        commands.entity(ent).despawn();
+                    }
+                }
+            }
             //updates piece
             if let Ok((mut pos, mut transform, _piece, entity)) = piece_q.get_mut(from) {
                 pos.x = to.x;
@@ -664,11 +690,12 @@ pub fn commit_move_system(mut commands: Commands, windows: Query<&Window>,
             }
             //Once piece is updated, if it is a capture, captured piece needs to despawn
             //added board snapshot_query
+
             selected.piece = None;
-            /*for (_, _, entity) in marker_q.iter() {
-                commands.entity(entity).despawn();
-            }*/
+
+
             break;
         }
     }
 }
+
