@@ -203,7 +203,7 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
                             if position.x < 7 && position.y < 7
                             {
                                 let mut temp = Position { x: position.x + 1, y: position.y + 1 };
-                                while temp.x < 7 && temp.y < 7 {
+                                while temp.x <= 7 && temp.y <= 7 {
                                     if piece_at_position(&query, &temp) == None {
                                         moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
                                     } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
@@ -218,23 +218,52 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
                                 }
                             }
                             //upper left
-                            if position.x > 0 && position.y < 7
+                            if position.x != 0 && position.y < 7
                             {
                                 let mut temp = Position { x: position.x - 1, y: position.y + 1 };
-                                while temp.x > 0 && temp.y < 7 {
+                                while temp.x != 0 && temp.y <= 7 {
                                     if piece_at_position(&query, &temp) == None {
                                         moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
                                     } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
                                         moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
                                         break;
                                     }
+
                                     //white piece is in the way
                                     else {
                                         break;
                                     }
                                     temp = Position { x: temp.x - 1, y: temp.y + 1 };
                                 }
+                                //Copy paste this in respective spots
+                                if temp.x == 0 && temp.y <= 7 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+
+                                    }
+                                    //white piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                }
                             }
+                            //upper left edge
+                            /*if position.x > 0 && position.y < 7 {
+                                let mut temp = Position { x: 0, y: position.y + 1 };
+                                if piece_at_position(&query, &temp) == None {
+                                    moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
+                                    moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                    break;
+                                }
+
+                                //white piece is in the way
+                                else {
+                                    break;
+                                }
+                            }*/
                             //lower left
                             if position.x > 0 && position.y > 0
                             {
@@ -257,7 +286,7 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
                             if position.x < 7 && position.y > 0
                             {
                                 let mut temp = Position { x: position.x + 1, y: position.y - 1 };
-                                while temp.x < 7 && temp.y > 0 {
+                                while temp.x <= 7 && temp.y > 0 {
                                     if piece_at_position(&query, &temp) == None {
                                         moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
                                     } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
@@ -279,7 +308,7 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
                             if position.x < 7 && position.y < 7
                             {
                                 let mut temp = Position { x: position.x + 1, y: position.y + 1 };
-                                while temp.x < 7 && temp.y < 7 {
+                                while temp.x <= 7 && temp.y <= 7 {
                                     if piece_at_position(&query, &temp) == None {
                                         moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
                                     } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
@@ -297,7 +326,7 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
                             if position.x > 0 && position.y < 7
                             {
                                 let mut temp = Position { x: position.x - 1, y: position.y + 1 };
-                                while temp.x > 0 && temp.y < 7 {
+                                while temp.x > 0 && temp.y <= 7 {
                                     if piece_at_position(&query, &temp) == None {
                                         moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
                                     } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
@@ -333,7 +362,7 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
                             if position.x < 7 && position.y > 0
                             {
                                 let mut temp = Position { x: position.x + 1, y: position.y - 1 };
-                                while temp.x < 7 && temp.y > 0 {
+                                while temp.x <= 7 && temp.y > 0 {
                                     if piece_at_position(&query, &temp) == None {
                                         moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
                                     } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
@@ -676,14 +705,16 @@ pub fn commit_move_system(mut commands: Commands, windows: Query<&Window>,
 
 
             //Switching to piece_q, because board_snap is just piece_q without visual component
-            //There is a bug with knights and bishops; investigate later
+            //There is a bug with rooks and knights and bishops; investigate later
             //Despawns the wrong piece
-            //Fix possible moves as well; there is an issue with detecting diagonal Captures
+            //Fix possible moves as well; there is an issue with detecting diagonal Captures for non-pawns
+            //Fixed issue with diagonal captures, but left and bottom borders have issues with diagonal movement
             for (pos, _trans, pc, ent) in piece_q.iter() {
                 if pos.x == to.x && pos.y == to.y {
                     if pc.team != game.turn {
                         commands.entity(ent).despawn();
                         info!("Captured piece at {:?}, {:?}, {:?}", pos.x, pos.y, pc.id );
+                        //*pc.captured = true;
                     }
                 }
             }

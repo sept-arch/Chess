@@ -345,25 +345,25 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
         texture: asset_server.load("pieces/white_rook.png"),
         transform: Transform::from_xyz(TILE_SIZE / 2.0 - offset, TILE_SIZE / 2.0 - offset, 0.0),
         ..default()
-    }, Square::new('h', 1usize, Some(16)), Piece::new(Team::White, PieceType::Rook, 16),  Position{x: 0, y: 0}
+    }, Square::new('h', 1usize, Some(9)), Piece::new(Team::White, PieceType::Rook, 9),  Position{x: 0, y: 0}
     ));
     commands.spawn((SpriteBundle {
         texture: asset_server.load("pieces/white_rook.png"),
         transform: Transform::from_xyz( 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
         ..default()
-    }, Square::new('a', 1usize, Some(9)), Piece::new(Team::White, PieceType::Rook, 9),  Position{x: 7, y: 0}
+    }, Square::new('a', 1usize, Some(16)), Piece::new(Team::White, PieceType::Rook, 16),  Position{x: 7, y: 0}
     ));
     commands.spawn((SpriteBundle {
         texture: asset_server.load("pieces/white_knight.png"),
         transform: Transform::from_xyz( 1f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
         ..default()
-    }, Square::new('g', 1usize, Some(15)), Piece::new(Team::White, PieceType::Knight, 15),  Position{x: 1, y: 0}
+    }, Square::new('g', 1usize, Some(10)), Piece::new(Team::White, PieceType::Knight, 10),  Position{x: 1, y: 0}
     ));
     commands.spawn((SpriteBundle {
         texture: asset_server.load("pieces/white_knight.png"),
         transform: Transform::from_xyz( 6f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, TILE_SIZE / 2.0 - offset, 0.0),
         ..default()
-    }, Square::new('b', 1usize, Some(10)), Piece::new(Team::White, PieceType::Knight, 10),  Position{x: 6, y: 0}
+    }, Square::new('b', 1usize, Some(15)), Piece::new(Team::White, PieceType::Knight, 15),  Position{x: 6, y: 0}
     ));
     commands.spawn((SpriteBundle {
         texture: asset_server.load("pieces/white_bishop.png"),
@@ -392,21 +392,15 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
     //black pieces
     commands.spawn((SpriteBundle {
         texture: asset_server.load("pieces/black_rook.png"),
-        transform: Transform::from_xyz(TILE_SIZE / 2.0 - offset, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
-        ..default()
-    }, Square::new('h', 8usize, Some(32)), Piece::new(Team::Black, PieceType::Rook, 32),  Position{x:7, y: 7}
-    ));
-    commands.spawn((SpriteBundle {
-        texture: asset_server.load("pieces/black_rook.png"),
         transform: Transform::from_xyz( 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
         ..default()
     }, Square::new('a', 8usize, Some(25)), Piece::new(Team::Black, PieceType::Rook, 25),  Position{x:0, y: 7}
     ));
     commands.spawn((SpriteBundle {
-        texture: asset_server.load("pieces/black_knight.png"),
-        transform: Transform::from_xyz( 1f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        texture: asset_server.load("pieces/black_rook.png"),
+        transform: Transform::from_xyz(TILE_SIZE / 2.0 - offset, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
         ..default()
-    }, Square::new('g', 8usize, Some(31)), Piece::new(Team::Black, PieceType::Knight, 31),  Position{x:6, y: 7}
+    }, Square::new('h', 8usize, Some(32)), Piece::new(Team::Black, PieceType::Rook, 32),  Position{x:7, y: 7}
     ));
     commands.spawn((SpriteBundle {
         texture: asset_server.load("pieces/black_knight.png"),
@@ -415,10 +409,10 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
     }, Square::new('b', 8usize, Some(26)), Piece::new(Team::Black, PieceType::Knight, 26),  Position{x:1, y: 7}
     ));
     commands.spawn((SpriteBundle {
-        texture: asset_server.load("pieces/black_bishop.png"),
-        transform: Transform::from_xyz( 2f32 * TILE_SIZE - offset + TILE_SIZE / 2.0,7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        texture: asset_server.load("pieces/black_knight.png"),
+        transform: Transform::from_xyz( 1f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
         ..default()
-    }, Square::new('f', 8usize, Some(30)), Piece::new(Team::Black, PieceType::Bishop, 30),  Position{x:5, y: 7}
+    }, Square::new('g', 8usize, Some(31)), Piece::new(Team::Black, PieceType::Knight, 31),  Position{x:6, y: 7}
     ));
     commands.spawn((SpriteBundle {
         texture: asset_server.load("pieces/black_bishop.png"),
@@ -427,11 +421,16 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
     }, Square::new('c', 8usize, Some(27)), Piece::new(Team::Black, PieceType::Bishop, 27),  Position{x:2, y: 7}
     ));
     commands.spawn((SpriteBundle {
+        texture: asset_server.load("pieces/black_bishop.png"),
+        transform: Transform::from_xyz( 2f32 * TILE_SIZE - offset + TILE_SIZE / 2.0,7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
+        ..default()
+    }, Square::new('f', 8usize, Some(30)), Piece::new(Team::Black, PieceType::Bishop, 30),  Position{x:5, y: 7}
+    ));
+    commands.spawn((SpriteBundle {
         texture: asset_server.load("pieces/black_king.png"),
         transform: Transform::from_xyz( 4f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 7f32 * TILE_SIZE - offset + TILE_SIZE / 2.0, 0.0),
         ..default()
     }, Square::new('e', 8usize, Some(29)), Piece::new(Team::Black, PieceType::King, 29),  Position{x:4, y: 7}
-
     ));
     commands.spawn((SpriteBundle {
         texture: asset_server.load("pieces/black_queen.png"),
