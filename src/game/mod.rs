@@ -495,7 +495,7 @@ enum MoveType {
 //the two spaces forward move is already taken care of, as well as potential pawn captures. I need to differentiate between captures and non-captures now
 //Reminder: Possible moves tracks the square and if there is already a piece on it
 
-//rework to be fit into highlight_moves
+//rework to output a hashmap similar to possible, but smaller if there is a check present
 pub fn legal_moves(possible: HashMap<usize, Vec<(Square, Position)>>, mut commands: Commands, asset_server: Res<AssetServer>, query: Query<(Entity, &Position), With<Piece>>, game: &Game) {
     //first, we need to find out if we are in check. If any move involves capturing the black king, then it is in check. It does not account for castling; it needs to be added later
     if check(&possible, &game) {
@@ -647,6 +647,7 @@ pub fn commit_move_system(mut commands: Commands, windows: Query<&Window>,
     camera_q: Query<(&Camera, &GlobalTransform)>, mut piece_q: Query<(&mut Position, &mut Transform, &Piece, Entity)>,
   marker_q: Query<(&MoveTarget, &Transform, Entity), (With<Marker>, Without<Piece>)>, mut selected: ResMut<Selected>,
   mouse_buttons: Res<Input<MouseButton>>, board_snapshot_q: Query<(&mut Square, &mut Piece, &mut Position, Entity,), Without<Transform>>,
+  game: Res<Game>
 ) {
     let window = windows.single();
     if mouse_buttons.just_pressed(MouseButton::Left) {
@@ -673,10 +674,16 @@ pub fn commit_move_system(mut commands: Commands, windows: Query<&Window>,
             let from = move_target.from;
             let to = move_target.to;
 
-            for (sq, pc, pos, ent) in board_snapshot_q.iter() {
+
+            //Switching to piece_q, because board_snap is just piece_q without visual component
+            //There is a bug with knights and bishops; investigate later
+            //Despawns the wrong piece
+            //Fix possible moves as well; there is an issue with detecting diagonal Captures
+            for (pos, _trans, pc, ent) in piece_q.iter() {
                 if pos.x == to.x && pos.y == to.y {
-                    if Some(pc).is_some() {
+                    if pc.team != game.turn {
                         commands.entity(ent).despawn();
+                        info!("Captured piece at {:?}, {:?}, {:?}", pos.x, pos.y, pc.id );
                     }
                 }
             }

@@ -249,7 +249,7 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
             transform: Transform::from_xyz(x, y, 0.0),
             ..default()
         },
-                        Square::new(n, 2, Some(n as usize - 'a' as usize)), pos
+                        //Square::new(n, 2, Some(n as usize - 'a' as usize)), pos
         ));
     }
     //black pawns
@@ -271,7 +271,7 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
             transform: Transform::from_xyz(x, y, 0.0),
             ..default()
         },
-                        Square::new(n, 1, Some((n as usize - 'a' as usize) + 8)), pos
+            //Square::new(n, 1, Some((n as usize - 'a' as usize) + 8)), pos
         ));
     }
     for n in 'a'..='h' {
@@ -293,7 +293,7 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
             transform: Transform::from_xyz(x, y, 0.0),
             ..default()
         },
-                        Square::new(n, 7, Some(n as usize - 'a' as usize)), pos
+            //Square::new(n, 7, Some(n as usize - 'a' as usize)), pos
         ));
     }
     for n in 'a'..='h' {
@@ -315,7 +315,7 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
             transform: Transform::from_xyz(x, y, 0.0),
             ..default()
         },
-                        Square::new(n, 8, Some(n as usize - 'a' as usize)), pos
+                        //Square::new(n, 8, Some(n as usize - 'a' as usize)), pos
         ));
     }
     //pawns
