@@ -141,39 +141,14 @@ impl Game {
     //List of all opponent's legal moves, to see if any of them involve the capture of the king
 
 
-    pub fn check(&self) -> bool {
-        //check whose turn it is; check opposite's sides possible moves
-        //go through the game.piece_list at either 1 or 17 (white or black)
-        //see if any move involves the capture of 13 (white king) or 29 (black king)
-        //Want to figure out a way if a move would be illegal without moving anything
+    pub fn next_turn(&mut self) {
         if self.turn == Team::White {
-            //do a special_rights function here, match for castling and passant
-            false
+            self.turn = Team::Black;
         }
         else {
-            false
+            self.turn = Team::White;
         }
     }
-    //list of legal moves of all pieces if king is not in check
-    //id, legal moves
-    /*pub fn legal_moves(&self) -> HashMap(usize, vec<Square>) {
-        if self.turn == Team::White {
-            for n in 1usize..=17 {
-                let mut moves: Square = Vec::new();
-                if !int_to_piece(n).unwrap().captured {
-                    match n {
-                         1 => if rank == 2 && self.board[0][2].piece.is_none() {
-                             moves.push(Square::new('a', 1));
-                         }
-
-                    }
-                }
-            }
-        }
-        if self.turn == Team::Black {
-
-        }
-    }*/
 
 }
 

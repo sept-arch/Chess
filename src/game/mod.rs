@@ -614,6 +614,607 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
             }
         }
     }
+    else {
+        for (square, piece, position) in query.iter() {
+            let mut moves: Vec<(Square, Position)> = Vec::new();
+            if let Some(piece) = piece {
+                if piece.team == Team::Black {
+                    match piece.id {
+                        //Black pawns
+                        17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 => {
+
+                            let front = Position {x: position.x, y: position.y + 1};
+                            if piece_at_position(&query, &front) == None {
+                                //NOTE PLEASE FIX THE SQUARE: IT IS NOT THE SAME AS FRONT: DO SOME ASCII MATH
+                                moves.push((Square {file: char::from_u32(97 + front.x as u32).expect("will always be lowercase"), rank: position.y + 2, id: None }, front));
+                            }
+                            //As far as I am aware, there should be no reason a pawn is in this file without having made any moves
+                            if position.y == 1 && piece_at_position(&query, &Position {x: position.x, y: position.y + 2}).is_none() {
+                                //HERE TOO
+                                moves.push((Square {file: char::from_u32(97 + position.x as u32).expect("will always be lowercase"), rank: position.y + 3, id: None }, Position{x: position.x, y: position.y + 2}));
+                            }
+                            /*right diagonal potential capture; must consider if a piece is on the
+                            edge of the board*/
+                            if position.x != 7 {
+                                let enemy = Position {x: position.x + 1, y: position.y + 1};
+                                if piece_at_position(&query, &enemy).map_or(false, |p| p.team == Team::White) {
+                                    //DON'T MAKE THE SAME MISTAKE
+                                    moves.push((Square {file: char::from_u32(96 + position.x as u32).expect("will always be lowercase"), rank: position.y + 2,  id: piece_at_position(&query, &enemy).map(|p| p.id)},  enemy));
+                                }
+                            }
+                            // left diagonal
+                            if position.x != 0 {
+                                let enemy = Position {x: position.x - 1, y: position.y + 1};
+                                if piece_at_position(&query, &enemy).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(98 + position.x as u32).expect("will always be lowercase"), rank: position.y + 2,  id: piece_at_position(&query, &enemy).map(|p| p.id)},  enemy));
+                                }
+                            }
+                        }
+                        //rooks
+                        25 | 32 => {
+                            if position.x > 0 {
+                                let mut side = Position {x: position.x - 1, y: position.y};
+                                //if square is empty, add to list
+                                while piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: side.y,  id: None},  side));
+                                    if side.x == 0 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x - 1, y: side.y};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            //loop for right movement
+                            if position.x < 7 {
+                                let mut side = Position {x: position.x + 1, y: position.y};
+                                while piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: side.y,  id: None},  side));
+                                    if side.x == 7 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x + 1, y: side.y};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            //upward movement
+                            if position.y < 7 {
+                                let mut side = Position {x: position.x, y: position.y + 1};
+                                while piece_at_position(&query, &side) == None {
+                                    //y is + 1 because side is position based
+                                    moves.push((Square {file: square.file, rank: side.y + 1,  id: None},  side));
+                                    if side.y == 7 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x, y: side.y + 1};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: square.file, rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            //downward
+                            if position.y > 0 {
+                                let mut side = Position {x: position.x, y: position.y - 1};
+                                while piece_at_position(&query, &side) == None {
+                                    //y is + 1 because side is position based
+                                    moves.push((Square {file: square.file, rank: side.y + 1,  id: None},  side));
+                                    if side.y == 0 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x, y: side.y - 1};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: square.file, rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                        }
+                        //knights
+                        26 | 31 => {
+                            //here on out, use positions instead of ranks and files
+                            //would use a more efficient system, but I want to avoid corner cases screwing up code,
+                            //so I will go L by L
+                            //horizontal upper left
+                            if position.x > 1 && position.y < 7 {
+                                let potential = Position {x: position.x - 2, y: position.y + 1};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + potential.x as u32).expect("will always be lowercase"), rank: potential.y + 1,  id: piece_at_position(&query, &potential).map(|p| p.id)},  potential));
+                                }
+                            }
+                            //vertical upper left
+                            if position.x > 0 && position.y < 6 {
+                                let potential = Position {x: position.x - 1, y: position.y + 2};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + potential.x as u32).expect("will always be lowercase"), rank: potential.y + 1,  id: piece_at_position(&query, &potential).map(|p| p.id)},  potential));
+                                }
+                            }
+                            //vertical upper right
+                            if position.x < 7 && position.y < 6 {
+                                let potential = Position {x: position.x + 1, y: position.y + 2};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + potential.x as u32).expect("will always be lowercase"), rank: potential.y + 1,  id: piece_at_position(&query, &potential).map(|p| p.id)},  potential));
+                                }
+                            }
+                            //horizontal upper right
+                            if position.x < 6 && position.y < 7 {
+                                let potential = Position {x: position.x + 2, y: position.y + 1};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + potential.x as u32).expect("will always be lowercase"), rank: potential.y + 1,  id: piece_at_position(&query, &potential).map(|p| p.id)},  potential));
+                                }
+                            }
+                            //horizontal lower right
+                            if position.x < 6 && position.y > 0 {
+                                let potential = Position {x: position.x + 2, y: position.y - 1};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + potential.x as u32).expect("will always be lowercase"), rank: potential.y + 1,  id: piece_at_position(&query, &potential).map(|p| p.id)},  potential));
+                                }
+                            }
+                            //vertical lower right
+                            if position.x < 7 && position.y > 1 {
+                                let potential = Position {x: position.x + 1, y: position.y - 2};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + potential.x as u32).expect("will always be lowercase"), rank: potential.y + 1,  id: piece_at_position(&query, &potential).map(|p| p.id)},  potential));
+                                }
+                            }
+                            //vertical lower left
+                            if position.x > 0 && position.y > 1 {
+                                let potential = Position {x: position.x - 1, y: position.y - 2};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + potential.x as u32).expect("will always be lowercase"), rank: potential.y + 1,  id: piece_at_position(&query, &potential).map(|p| p.id)},  potential));
+                                }
+                            }
+                            //horizontal lower left
+                            if position.x > 1 && position.y > 0 {
+                                let potential = Position {x: position.x - 2, y: position.y - 1};
+                                if piece_at_position(&query, &potential) == None ||
+                                    piece_at_position(&query, &potential).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + potential.x as u32).expect("will always be lowercase"), rank: potential.y + 1,  id: piece_at_position(&query, &potential).map(|p| p.id)},  potential));
+                                }
+                            }
+                        }
+                        //bishops
+                        27 | 30 => {
+                            //up and right
+                            if position.x < 7 && position.y < 7
+                            {
+                                let mut temp = Position { x: position.x + 1, y: position.y + 1 };
+                                while temp.x <= 7 && temp.y <= 7 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x + 1, y: temp.y + 1 };
+                                }
+                            }
+                            //upper left
+                            if position.x != 0 && position.y < 7
+                            {
+                                let mut temp = Position { x: position.x - 1, y: position.y + 1 };
+                                while temp.x != 0 && temp.y <= 7 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+
+
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x - 1, y: temp.y + 1 };
+                                }
+                                //Copy paste this in respective spots
+                                if temp.x == 0 && temp.y <= 7 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+
+
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                }
+                            }
+                            //upper left edge
+                            /*if position.x > 0 && position.y < 7 {
+                                let mut temp = Position { x: 0, y: position.y + 1 };
+                                if piece_at_position(&query, &temp) == None {
+                                    moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                    break;
+                                }
+
+
+                                //Black piece is in the way
+                                else {
+                                    break;
+                                }
+                            }*/
+                            //lower left
+                            if position.x > 0 && position.y > 0
+                            {
+                                let mut temp = Position { x: position.x - 1, y: position.y - 1 };
+                                /*while temp.x > 0 && temp.y > 0 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x - 1, y: temp.y - 1 };
+                                }*/
+                                loop {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    if temp.x == 0 || temp.y == 0 {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x - 1, y: temp.y - 1 };
+
+
+                                }
+                                //little more complicated here, need cases for the corner and bottom and left edge
+                                /*if (temp.x == 0 && temp.y == 0)  //|| (temp.x > 0 && temp.y == 0)
+                                    {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+
+
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                }*/
+                                /*if temp.x <= 7 && temp.y == 0 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+
+
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                }*/
+                            }
+                            //lower right
+                            if position.x < 7 && position.y > 0
+                            {
+                                let mut temp = Position { x: position.x + 1, y: position.y - 1 };
+                                /*while temp.x <= 7 && temp.y > 0 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x + 1, y: temp.y - 1 };
+                                }*/
+                                loop {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    if temp.x == 7 || temp.y == 0 {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x + 1, y: temp.y - 1 };
+
+
+                                }
+
+
+
+
+                                /*if (temp.x == 7 && temp.y == 0)
+                                {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+
+
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                }*/
+                            }
+                        }
+                        //queen
+                        30 => {
+                            //combine bishop and rook logic
+                            //up and right
+                            if position.x < 7 && position.y < 7
+                            {
+                                let mut temp = Position { x: position.x + 1, y: position.y + 1 };
+                                while temp.x <= 7 && temp.y <= 7 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x + 1, y: temp.y + 1 };
+                                }
+                            }
+                            //upper left
+                            if position.x > 0 && position.y < 7
+                            {
+                                let mut temp = Position { x: position.x - 1, y: position.y + 1 };
+                                while temp.x > 0 && temp.y <= 7 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x - 1, y: temp.y + 1 };
+                                }
+                                if temp.x == 0 && temp.y <= 7 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+
+
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                }
+                            }
+                            //lower left
+                            if position.x > 0 && position.y > 0
+                            {
+                                let mut temp = Position { x: position.x - 1, y: position.y - 1 };
+                                loop {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    if temp.x == 0 || temp.y == 0 {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x - 1, y: temp.y - 1 };
+                                }
+                                if temp.x == 0 && temp.y <= 7 {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+
+
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                }
+                            }
+                            //lower right
+                            if position.x < 7 && position.y > 0
+                            {
+                                let mut temp = Position { x: position.x + 1, y: position.y - 1 };
+                                loop {
+                                    if piece_at_position(&query, &temp) == None {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
+                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::White) {
+                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
+                                        break;
+                                    }
+                                    //Black piece is in the way
+                                    else {
+                                        break;
+                                    }
+                                    if temp.x == 7 || temp.y == 0 {
+                                        break;
+                                    }
+                                    temp = Position { x: temp.x + 1, y: temp.y - 1 };
+
+
+                                }
+                            }
+                            //rook copy
+                            if position.x > 0 {
+                                let mut side = Position {x: position.x - 1, y: position.y};
+                                //if square is empty, add to list
+                                while piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: side.y,  id: None},  side));
+                                    if side.x == 0 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x - 1, y: side.y};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            //loop for right movement
+                            if position.x < 7 {
+                                let mut side = Position {x: position.x + 1, y: position.y};
+                                while piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: side.y,  id: None},  side));
+                                    if side.x == 7 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x + 1, y: side.y};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            //upward movement
+                            if position.y < 7 {
+                                let mut side = Position {x: position.x, y: position.y + 1};
+                                while piece_at_position(&query, &side) == None {
+                                    //y is + 1 because side is position based
+                                    moves.push((Square {file: square.file, rank: side.y + 1,  id: None},  side));
+                                    if side.y == 7 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x, y: side.y + 1};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) {
+                                    //consider adding the &option<piece> to each moves.push
+                                    moves.push((Square {file: square.file, rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            //downward
+                            if position.y > 0 {
+                                let mut side = Position {x: position.x, y: position.y - 1};
+                                while piece_at_position(&query, &side) == None {
+                                    //y is + 1 because side is position based
+                                    moves.push((Square {file: square.file, rank: side.y + 1,  id: None},  side));
+                                    if side.y == 0 {
+                                        break;
+                                    }
+                                    side = Position {x: side.x, y: side.y - 1};
+                                }
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) {
+                                    moves.push((Square {file: square.file, rank: side.y,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                        }
+                        //king
+                        31 => {
+                            //just like the other pieces, each possible move will be checked manually
+                            //t-shaped movement first
+                            if position.y < 7 {
+                                let side = Position {x: position.x, y: position.y + 1};
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) ||
+                                    piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: square.file, rank: square.rank + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+
+
+                                }
+                            }
+                            if position.y > 0 {
+                                let side = Position {x: position.x, y: position.y - 1};
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) ||
+                                    piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: square.file, rank: square.rank - 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+
+
+                            }
+                            if position.x > 0 {
+                                let side = Position {x: position.x - 1, y: position.y};
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) ||
+                                    piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: square.rank,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            if position.x < 7 {
+                                let side = Position {x: position.x + 1, y: position.y};
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) ||
+                                    piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: square.rank,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            //x-shaped
+                            if position.y > 0  && position.x > 0 {
+                                let side = Position {x: position.x - 1, y: position.y - 1};
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) ||
+                                    piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: square.rank - 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            if position.y < 7 && position.x < 7 {
+                                let side = Position {x: position.x + 1, y: position.y + 1};
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) ||
+                                    piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: square.rank + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            if position.y > 0 && position.x < 7 {
+                                let side = Position {x: position.x + 1, y: position.y - 1};
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) ||
+                                    piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("will always be lowercase"), rank: square.rank - 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                            if position.y < 7 && position.x > 0 {
+                                let side = Position {x: position.x - 1, y: position.y + 1};
+                                if piece_at_position(&query, &side).map_or(false, |p| p.team == Team::White) ||
+                                    piece_at_position(&query, &side) == None {
+                                    moves.push((Square {file: char::from_u32(97 + side.x as u32).expect("side.x is < 8"), rank: square.rank + 1,  id: piece_at_position(&query, &side).map(|p| p.id)},  side));
+                                }
+                            }
+                        }
+                        _ => continue
+                    }
+                }
+                possible.insert(piece.id, moves);
+            }
+        }
+    }
+
+
     possible
 }
 
@@ -782,7 +1383,7 @@ pub fn commit_move_system(mut commands: Commands, windows: Query<&Window>,
     camera_q: Query<(&Camera, &GlobalTransform)>, mut piece_q: Query<(&mut Position, &mut Transform, &Piece, Entity)>,
   marker_q: Query<(&MoveTarget, &Transform, Entity), (With<Marker>, Without<Piece>)>, mut selected: ResMut<Selected>,
   mouse_buttons: Res<Input<MouseButton>>, board_snapshot_q: Query<(&mut Square, &mut Piece, &mut Position, Entity,), Without<Transform>>,
-  game: Res<Game>
+  mut game: ResMut<Game>
 ) {
     let window = windows.single();
     if mouse_buttons.just_pressed(MouseButton::Left) {
@@ -835,8 +1436,7 @@ pub fn commit_move_system(mut commands: Commands, windows: Query<&Window>,
             //added board snapshot_query
 
             selected.piece = None;
-
-
+            game.next_turn();
             break;
         }
     }
