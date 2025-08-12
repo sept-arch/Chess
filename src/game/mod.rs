@@ -298,32 +298,7 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
                                     temp = Position { x: temp.x - 1, y: temp.y - 1 };
 
                                 }
-                                //little more complicated here, need cases for the corner and bottom and left edge
-                                /*if (temp.x == 0 && temp.y == 0)  //|| (temp.x > 0 && temp.y == 0)
-                                    {
-                                    if piece_at_position(&query, &temp) == None {
-                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
-                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
-                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
 
-                                    }
-                                    //white piece is in the way
-                                    else {
-                                        break;
-                                    }
-                                }*/
-                                /*if temp.x <= 7 && temp.y == 0 {
-                                    if piece_at_position(&query, &temp) == None {
-                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: None }, temp));
-                                    } else if piece_at_position(&query, &temp).map_or(false, |p| p.team == Team::Black) {
-                                        moves.push((Square { file: char::from_u32(97 + temp.x as u32).expect("will always be lowercase"), rank: temp.y + 1, id: piece_at_position(&query, &temp).map(|p| p.id) }, temp));
-
-                                    }
-                                    //white piece is in the way
-                                    else {
-                                        break;
-                                    }
-                                }*/
                             }
                             //lower right
                             if position.x < 7 && position.y > 0
@@ -623,20 +598,20 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
                         //Black pawns
                         17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 => {
 
-                            let front = Position {x: position.x, y: position.y + 1};
+                            let front = Position {x: position.x, y: position.y - 1};
                             if piece_at_position(&query, &front) == None {
                                 //NOTE PLEASE FIX THE SQUARE: IT IS NOT THE SAME AS FRONT: DO SOME ASCII MATH
-                                moves.push((Square {file: char::from_u32(97 + front.x as u32).expect("will always be lowercase"), rank: position.y + 2, id: None }, front));
+                                moves.push((Square {file: char::from_u32(97 + front.x as u32).expect("will always be lowercase"), rank: position.y - 2, id: None }, front));
                             }
                             //As far as I am aware, there should be no reason a pawn is in this file without having made any moves
-                            if position.y == 1 && piece_at_position(&query, &Position {x: position.x, y: position.y + 2}).is_none() {
+                            if position.y == 6 && piece_at_position(&query, &Position {x: position.x, y: position.y - 2}).is_none() {
                                 //HERE TOO
-                                moves.push((Square {file: char::from_u32(97 + position.x as u32).expect("will always be lowercase"), rank: position.y + 3, id: None }, Position{x: position.x, y: position.y + 2}));
+                                moves.push((Square {file: char::from_u32(97 + position.x as u32).expect("will always be lowercase"), rank: position.y - 3, id: None }, Position{x: position.x, y: position.y - 2}));
                             }
                             /*right diagonal potential capture; must consider if a piece is on the
                             edge of the board*/
                             if position.x != 7 {
-                                let enemy = Position {x: position.x + 1, y: position.y + 1};
+                                let enemy = Position {x: position.x + 1, y: position.y - 1};
                                 if piece_at_position(&query, &enemy).map_or(false, |p| p.team == Team::White) {
                                     //DON'T MAKE THE SAME MISTAKE
                                     moves.push((Square {file: char::from_u32(96 + position.x as u32).expect("will always be lowercase"), rank: position.y + 2,  id: piece_at_position(&query, &enemy).map(|p| p.id)},  enemy));
@@ -644,7 +619,7 @@ pub fn possible_moves(team: Team, query: Vec<(Square, Option<Piece>, Position)>)
                             }
                             // left diagonal
                             if position.x != 0 {
-                                let enemy = Position {x: position.x - 1, y: position.y + 1};
+                                let enemy = Position {x: position.x - 1, y: position.y - 1};
                                 if piece_at_position(&query, &enemy).map_or(false, |p| p.team == Team::White) {
                                     moves.push((Square {file: char::from_u32(98 + position.x as u32).expect("will always be lowercase"), rank: position.y + 2,  id: piece_at_position(&query, &enemy).map(|p| p.id)},  enemy));
                                 }
@@ -1232,14 +1207,57 @@ enum MoveType {
 //Reminder: Possible moves tracks the square and if there is already a piece on it
 
 //rework to output a hashmap similar to possible, but smaller if there is a check present
-pub fn legal_moves(possible: HashMap<usize, Vec<(Square, Position)>>, mut commands: Commands, asset_server: Res<AssetServer>, query: Query<(Entity, &Position), With<Piece>>, game: &Game) {
+
+//unable to use a clone of a query due to the way its accessed;
+//Container just for simulating moves
+#[derive(Clone)]
+struct SimSquare {
+    square: Square,
+    piece: Option<Piece>,
+    pos: Position,
+}
+
+pub fn legal_moves(possible: HashMap<usize, Vec<(Square, Position)>>, game: &Game, board_snapshot_q: Query<(&Square, &Piece, &Position)>) -> HashMap<usize, Vec<(Square, Position)>> {
     //first, we need to find out if we are in check. If any move involves capturing the black king, then it is in check. It does not account for castling; it needs to be added later
     if check(&possible, &game) {
-        let mut test = possible.clone();
+        //copy of the board
+        let mut new_possible = HashMap::new();
+        let test: Vec<SimSquare> = board_snapshot_q.iter().map(|(square, piece, pos)| SimSquare { square: square.clone(), piece: Some(piece.clone()), pos: pos.clone() }).collect();
+        //go through each possible move, on each move, create a temp = to the new possible_moves, rerun check, and then add to list. If list is empty, then game is over
+        for (id, move_list) in possible.iter() {
+            let mut maybest: Vec<(Square, Position)> = Vec::new();
+            for (sq, ps) in move_list {
+                let mut temp = test.clone();
+                for simulation in temp.iter_mut() {
+                    if *id == simulation.piece.clone().unwrap().id {
+                        *simulation = SimSquare { square: sq.clone(), piece: Some(simulation.piece.clone().unwrap()), pos: *ps};
+
+                        let temp_simulation: Vec<(Square, Option<Piece>, Position)> = temp.iter().map(|s|(s.square.clone(), Some(s.piece.clone().unwrap()), s.pos.clone())).collect();
+                        let temp_possible = possible_moves(game.turn.clone(), temp_simulation);
+                        //move is pointless
+                        if check(&temp_possible, &game) {}
+                        else {
+                            maybest.push((sq.clone(), *ps));
+                        }
+                        //breaks regardless to reset temp
+                        break;
+                    }
+                }
+            }
+            if maybest.is_empty() {
+                continue;
+            }
+             else {
+                 new_possible.insert(id.clone(), maybest);
+             }
+        }
+
+        new_possible
+
     }
 
     else {
-        //do the command.spawns and carry on as planned
+        possible
 
     }
 
@@ -1333,9 +1351,13 @@ board_snapshot_query: Query<(&Square, &Piece, &Position)>, asset_server: Res<Ass
     let board_vec: Vec<(Square, Option<Piece>, Position)> = board_snapshot_query.iter()
         .map(|(_entity, maybe_piece, pos)| { (Square::new((b'a' + pos.x as u8) as char, pos.y + 1, Some(maybe_piece.id)), Some(maybe_piece.clone()), pos.clone()) }).collect();
 
+    //if this is empty, then game is over
     let possible = possible_moves(game.turn.clone(), board_vec);
+    let real_moves = legal_moves(possible, &game, board_snapshot_query);
 
-    if let Some(moves) = possible.get(&piece.id) {
+
+
+    if let Some(moves) = real_moves.get(&piece.id) {
         for (square, destination_pos) in moves {
             let world_x = (destination_pos.x as f32) * TILE_SIZE - (TILE_SIZE * 8.0 / 2.0) + TILE_SIZE / 2.0;
             let world_y = (destination_pos.y as f32) * TILE_SIZE - (TILE_SIZE * 8.0 / 2.0) + TILE_SIZE / 2.0;
@@ -1411,16 +1433,14 @@ pub fn commit_move_system(mut commands: Commands, windows: Query<&Window>,
             let to = move_target.to;
 
 
-            //Switching to piece_q, because board_snap is just piece_q without visual component
-            //There is a bug with rooks and knights and bishops; investigate later
-            //Despawns the wrong piece
-            //If bishop enters the second file, a lot of pieces break
+
             for (pos, _trans, pc, ent) in piece_q.iter() {
                 if pos.x == to.x && pos.y == to.y {
                     if pc.team != game.turn {
                         commands.entity(ent).despawn();
                         info!("Captured piece at {:?}, {:?}, {:?}", pos.x, pos.y, pc.id );
                         //*pc.captured = true;
+                        //run material captured function
                     }
                 }
             }
