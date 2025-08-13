@@ -1219,7 +1219,16 @@ struct SimSquare {
 
 pub fn legal_moves(possible: HashMap<usize, Vec<(Square, Position)>>, game: &Game, board_snapshot_q: Query<(&Square, &Piece, &Position)>) -> HashMap<usize, Vec<(Square, Position)>> {
     //first, we need to find out if we are in check. If any move involves capturing the black king, then it is in check. It does not account for castling; it needs to be added later
-    if check(&possible, &game) {
+    let enemy_test: Vec<(Square, Option<Piece>, Position)> = board_snapshot_q.iter().map(|(square, piece, pos)| (square.clone(), Some(piece.clone()), *pos)).collect();
+    let mut enemy_team: Team;
+    if game.turn == Team::White {
+        enemy_team = Team::Black;
+    }
+    else {
+        enemy_team = Team::White;
+    }
+    let enemy_moves = possible_moves(enemy_team.clone(), enemy_test);
+    if check(&enemy_moves, &game) {
         //copy of the board
         let mut new_possible = HashMap::new();
         let test: Vec<SimSquare> = board_snapshot_q.iter().map(|(square, piece, pos)| SimSquare { square: square.clone(), piece: Some(piece.clone()), pos: pos.clone() }).collect();
@@ -1233,7 +1242,7 @@ pub fn legal_moves(possible: HashMap<usize, Vec<(Square, Position)>>, game: &Gam
                         *simulation = SimSquare { square: sq.clone(), piece: Some(simulation.piece.clone().unwrap()), pos: *ps};
 
                         let temp_simulation: Vec<(Square, Option<Piece>, Position)> = temp.iter().map(|s|(s.square.clone(), Some(s.piece.clone().unwrap()), s.pos.clone())).collect();
-                        let temp_possible = possible_moves(game.turn.clone(), temp_simulation);
+                        let temp_possible = possible_moves(enemy_team.clone(), temp_simulation);
                         //move is pointless
                         if check(&temp_possible, &game) {}
                         else {
@@ -1268,6 +1277,7 @@ pub fn check(possible: &HashMap<usize, Vec<(Square, Position)>>, game: &Game) ->
     for n in possible.values() {
         for (sq,_pos) in n {
             if game.turn == Team::White {
+                //assuming it has gone through black moves
                 if sq.id == Some(13) { return true; }
             }
             else {
