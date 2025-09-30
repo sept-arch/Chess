@@ -18,3 +18,6 @@ Coded entirely in Rust, makes use of the Bevy library
  - AI opponent with different difficulties 
  - Pull from a database to analyze moves and list the opening played
 
+# Notes
+- Assets came from Maciej Świerczek, and were further modified
+- https://www.figma.com/community/file/971870797656870866/chess-simple-assets
